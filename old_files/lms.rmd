@@ -1,0 +1,46 @@
+---
+title: "Linear models"
+author: "George Savva"
+date: "29/01/2020"
+output:
+  html_document: default
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE)
+```
+
+## Introduction
+
+You can use RMarkdown to write all your reports if you want to.  Some people use it for everything!
+
+First we need to estimate a linear model:
+
+```{r model}
+library(sjPlot)
+x <- rnorm(100)
+y <- x + rnorm(100)
+dat1 <- data.frame(x,y)
+lm1 <- lm(y~x)
+tab_model(lm1)
+```
+
+## Plotting with ggplot.
+
+Now we can make a plot.  This time I've set 'echo=TRUE' so you get the code and the output!
+
+
+
+```{r plot, echo=TRUE}
+library(ggplot2)
+preds <- as.data.frame(predict(lm1, interval = "confidence"))
+preds2 <- as.data.frame(predict(lm1, interval = "predict"))
+
+ggplot(data=dat1, aes(x=x, y=y)) + geom_point() + 
+  geom_ribbon(data=preds2, aes(ymin=lwr, ymax=upr), alpha=0.2,fill="red") + 
+  geom_ribbon(data=preds, aes(ymin=lwr, ymax=upr), alpha=0.5, fill="blue") + 
+  geom_line(data=preds, aes(y=fit)) + theme_bw()
+
+```
+
