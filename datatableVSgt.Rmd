@@ -1,0 +1,38 @@
+---
+title: "Using data.table to create tables of summary statistics"
+author: "George Savva"
+date: "06/01/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+In this short vignette I will explore several options for making tables of summary statistics in R.
+
+## Using `data.table`
+
+```{r }
+library(readxl)
+library(data.table)
+TreeData <- read_excel(path="old_files/day1_july_2020/introstat.xlsx", sheet="P1-TreeSpeciesData", .name_repair = "universal")
+TreeDataDT <- setDT(TreeData)
+```
+
+data.table is an R package designed to make working with data frames easier.
+
+It's central function is an extension of the standard subset function `[`.  This takes three aguments, that correspond to a 
+
+Once we have our data frame converted into a data.table, we can use this extended function to easily create summaries.
+
+```{r }
+class(TreeDataDT)
+TreeDataDT[,                # select all rows
+           mean(height),    # calculate the mean of 'height'
+           species.name     # stratify by species.name
+           ]
+```
+
+We can add 
+
