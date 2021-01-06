@@ -9,7 +9,11 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-In this short vignette I will explore several options for making tables of summary statistics in R.
+Making tables of descriptive statistics is one of the most important aspects of a data analysis.  Unfortunately R does not provide a natural way to produce such a table.  In its place, 
+
+In this short vignette I will explore several options for making tables of summary statistics in R.  These are:
+
+
 
 ## Using `data.table`
 
@@ -22,9 +26,12 @@ TreeDataDT <- setDT(TreeData)
 
 data.table is an R package designed to make working with data frames easier.
 
-It's central function is an extension of the standard subset function `[`.  This takes three aguments, that correspond to a 
+It's central function is an extension of the standard subset function `[`.  This takes three aguments, that correspond to 
+* The rows we want to use
+* The calculations to perform
+* How to group the rows
 
-Once we have our data frame converted into a data.table, we can use this extended function to easily create summaries.
+Making a table of descriptives using this function is easiest illustrated using a simple example.   To get the mean tree height over species, including all rows in our dataset we would run:
 
 ```{r }
 class(TreeDataDT)
@@ -34,5 +41,24 @@ TreeDataDT[,                # select all rows
            ]
 ```
 
-We can add 
+We can add a second column for standard deviation, by using a `list`:
 
+```{r }
+class(TreeDataDT)
+TreeDataDT[,                # select all rows
+           list( mean(height), 
+                 sd(height)),    # calculate the mean and sd of 'height'
+           species.name     # stratify by species.name
+           ]
+```
+
+Now we need to give each column a nice name:
+```{r }
+TreeDataDT[,                # select all rows
+           list( `Mean Height`=mean(height), 
+                 `SD` = sd(height)),    # calculate the mean and sd of 'height'
+           list(`Species` = species.name)     # stratify by species.name
+           ]
+```
+
+This is nice as we 

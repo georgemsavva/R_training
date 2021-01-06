@@ -520,17 +520,28 @@ For complex datasets, for example high throughput genomics combined with meta-da
 
 Once we have our data tidied and loaded into a data frame, we can access each varible as a vector and work on it exactly as we did in the section on vectors above.
 
-We can access the individual vectors using the $ accessor operator:
+We can access the individual vectors using the `$` accessor operator:
 
+```{r }
 TreeData$height
+```
 
-So we can use any of the functions for vectors to summarise this variable.  Try:
+(see https://www.r-bloggers.com/2009/10/r-accessors-explained/ for more details r accessor functions)
+
+
+This is just a vector, so we can use any of the functions for vectors to summarise this variable.  Try:
+```{r }
 mean(TreeData$height)
 
 boxplot(TreeData$height)
+```
 
-This can be a useful way to summarise individual variables, but it’s often more helpful to be able to summarise according to the levels of another factor.
+This can be a useful way to summarise individual variables, although as a summary table goes it's a bit limited!  but it’s often more helpful to be able to summarise according to the levels of another factor.
+
 Let’s get the heights by species.  We can do this using the ‘aggregate’ function.  But first we need to fix the names of the variables in the data frame.  R will import data frame columns
+
+
+
 > aggregate( data = TreeData, height ~ species.name, FUN=mean)
             Group.1         x
 1    A. aulococarpa  6.188889
