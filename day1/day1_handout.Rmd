@@ -184,9 +184,9 @@ So far we have used R as a calculator.  Next we'll learn about how R stores and 
 
 ### Functions
 
-Everything in R is done by executing ‘functions’.  When you typed 1+2 at the console above you were executing the + function, with 1 and 2 as its arguments, and the result was printed in the console window.
+Everything in R is done by executing ‘functions’.  When you typed `1+2` at the console above you were calling the `+` function, with `1` and `2` as its arguments, and the result was printed in the console window.
 
-Functions are more commonly called by their *name*, with their *arguments* in brackets.  For example, to get say the logarithm (base 10) of 100, we would type
+Functions are more commonly called by their *name*, with their *arguments* in brackets, separated by commas.  For example, to get say the logarithm (base 10) of 100, we would type
 
 ```{r }
 ### Try this directly in the console, and by running it from your new script.
@@ -198,6 +198,8 @@ Here, `log` is the name of the function, with `x` and `base` its arguments.  The
 Try each of the following commands.  Do you understand what they do any why?
 
 ```{r eval=FALSE }
+### From now on, keep everything you try in a script file.
+
 log(x=100, base=10)
 log(x=100)
 log(base=10, x=100)
@@ -215,19 +217,18 @@ Instead of directly displaying the value of the function (‘value’ is what R 
 x = 1+2
 ```
 
-The = in this case represents ‘assignment’.  The line above says:
+The `=` in this context represents ‘assignment’.  The line above says:
 
 ‘evaluate 1+2, and store the result in an object called x’  or more simply  ‘assign the value of 1+2 to x’.
 You might find it easier to understand:
 
 ```{r }
-### From now on, keep everything you try in a script.
 x <- 1+2
 ```
 
-This does exactly the same thing; some R users use `<-` instead of `=` for assignment (for historical reasons), so both forms will come up when you’re looking at help or other people’s code.  I try to use `=` where I can, but old habits die hard so I am likely to use both interchangeably.
+This does exactly the same thing; some R users use `<-` instead of `=` for assignment (for historical reasons), so both forms will come up when you’re looking at help or other people’s code.  I tend to use either interchangably.
 
-So now you have an object called `x` that holds the number 3.  You can ask R to display the value of ‘x’ by just entering x (just entering the name of an object prints that object):
+So now you have an object called `x` in your *environment* that holds the number 3.  You can ask R to display the value of ‘x’ by just entering x (just entering the name of an object prints that object):
 
 ```{r }
 x
@@ -239,21 +240,21 @@ Or do something else with x
 x*2
 ```
 
-Note your new object and its value should now have appeared in the ‘environment window’ in RStudio.
+Note your new object and its value should now have appeared in the 'Environment' pane in RStudio.
 
-To see the *class* of an object, use the `class()` function.
+To see the *class* of an object (what kind of thing is stored in the object), use the `class()` function.
 
 ```{r }
 class(x)
 ```
 
-Objects of different classes store different kinds of information.
+Objects of different classes store different kinds of information.  We will come across objects of many different classes later.
 
 `r exercise("More functions, and assigning values to variables")`
 
-a)	make a new object called y which has the value of x+3.  Then display y.
-b)	Now change the value of x (eg using  x <- 6 ).  Does the value of y change?
-c)	Objects can hold text strings instead of numbers.  Try:
+1.  Make a new object called y which has the value of x+3.  Then display y.
+2.	Now change the value of x (eg using  x <- 6 ).  Does the value of y change?
+3.	Objects can hold text strings instead of numbers.  Try:
 
 ```{r }
 myname <- "George"  #(or whatever your name is).
@@ -261,25 +262,28 @@ myname
 ```
 
 What is the class of the ‘myname’ object?
-d)	(difficult)  Look up the function to turn a text string into upper case (an internet search will help you).  Use this function to make a new object which has the same text as ‘myname’ but in upper case.
+
+4.	(difficult)  Look up the function to turn a text string into upper case (an internet search will help you).  Use this function to make a new object which has the same text as ‘myname’ but in upper case.
 
 `r section("Classes and types")`
 
-We saw two object of two different 'classes' in the previous exercise. These classes were 'numeric' and 'character'.  The class of an object defines what kind of data it can hold, and how other functions act on it.
+We saw two object of two different 'classes' in the previous exercise. These classes were 'numeric' and 'character'.  The class of an object defines what kind of information it hold, and how other functions act on it.
 
 There are four basic classes that you will commonly use and should be aware of.  These correspond to the types of data you might have.  The basic types are:
+
 *	'numeric' – For keeping numerical data
 *	'logical' – can only take the values (TRUE or FALSE)
 *	'character' – for strings of text
 *	'factor' – for labelled categorical variables (ordered or unordered)
 
-In addition, every other kind of object you will use or generate has its own class, which defined the sort of information it contains and how other functions handle it.  Later in this tutorial we will see objects of class:
+Later in this tutorial we will see objects of class:
+
 *	‘data.frame’ – storing datasets
-*	‘lm’ – stores the results of a linear regression model
+*	‘lm’ – stores the all results of a linear regression model
 
 ## Character strings
 
-Character strings represent text rather than numbers.  Strings are used to label categories in a dataset, to identify columns in a dataset, to make your outputs more readable.  You also might find that part of your data has been entered as a string, for example patient identifiers or gene names in a database.
+Character strings represent text rather than numbers.  Strings are used to label categories in a dataset, to identify columns in a dataset, to make your outputs more readable.  You also might find that part of your data has been entered as a string, for example patient identifiers or gene names in a database, or responses to open ended questions.
 
 Strings are identified in R (and in most other programming languages) by enclosing them in quotes.  Single quotes and double quotes can be used (and are treated almost identically), but double quotes are preferred.  For example try:
 
@@ -294,61 +298,44 @@ print(Hello)
 
 A common mistake in R is to forget to enclose strings in quotes.  In which case R tries to interpret your input as an object name, leading to an error message if that name doesn’t exist.
 
-## COMMON MATHEMATICAL FUNCTIONS
-
-Most mathematical functions in R work on numeric objects as you would expect.  Functions you might commonly need include:
-The operators +, -, *, /
-Raising to a power:
-```{r }
-3^2
-
-sqrt(16)
-```
-
-Taking log and antilog (be careful of the base, this is a common source of confusion)
-```{r }
-a = log(10)
-
-a
-
-log(10, base=10)
-
-exp(a)
-```
 
 
-`r example("Vectors")`
+`r section("Vectors")`
 
-So now we know how to store individual values, but our datasets are obviously more complex than this.  The next building block is the 'vector' which is like a single column of values in a database.  We'll soon get on to assembling these into 'data.frames' to represent entire datasets, but here we'll focus on how vectors work.
+So now we know how to store individual values, but our datasets are obviously much more complex than this.  The next building block is the 'vector' which is like a single column of values in a database, all of the same type.  We'll soon get on to assembling these into 'data.frames' to represent entire datasets, but here we'll focus on how vectors themselves work.
 
-Objects can store more complex information than just a simple number.
+`r example("Creating and manipulating vectors")`
+
 Type the following:
 
 ```{r }
 a <- c(3,4,5)
 ```
 
-This assigns the vector (3,4,5) to a.
+This assigns the vector (3,4,5) to `a`.  `c()` is a common function in R which simply ‘combines’ its arguments into a vector. So in other words this command says ‘create a vector from the numbers 3,4 and 5, and call this vector object ‘a’.
 
-In other words this command says ‘create a vector from the numbers 3,4 and 5, and call this vector object ‘a’.
+Vectors can be any length.  Try:
 
-`c()` is a common function in R which simply ‘combines’ its arguments into a vector.
+```{r }
+b <- 1:10
+```
 
-The arguments of a function are the values you pass to the function.  In R you pass arguments in brackets after the function name, and they are separated by commas.
+What does the `:` operator do?
 
-You can display a just as you displayed ‘x’ previously
+You can display `a` just as you displayed `x` previously
 
 ```{r }
 a
 ```
 
-You can run more interesting functions on ‘a’.  Make sure you understand what each of the functions below does and why:
-```{r }
+And as with a single value you can fun more interesting functions on `a`.  Make sure you understand what each of the functions below does and why:
+
+```{r eval=FALSE}
 a + 1
 
 a * 2
 
-a>3  # what class does the output from this function have? (R ignores anything after a ‘#’)
+a > 3  # what class does the value of this function have?
 
 a + x
 
@@ -363,23 +350,48 @@ summary(a)
 plot(a)  # where did your plot appear?
 ```
 
-Notice there are two kinds of function behaviour here.  Where a simple mathematical function or comparison was applied, R just appied it to each element of the vector in turn.  This is a powerful feature of R whereby you can peform functions on entire columns of data all at once.
+Notice there are two kinds of function behaviour here.  Where a simple mathematical function or comparison was applied, R just appied it to each element of the vector in turn.  This is a powerful feature of R whereby you can efficiently peform functions or comparisons on entire columns of data all at once.
 
-For other functions, like `mean()` and `sum()` a single number was returned based on all the elements of the vector.
+For other functions, like `mean()` and `sum()` a single number was returned based on combining the elements of the vector.
 
-## Extractors
+The elements of a vector must all be the same primitive type (that is, they must be all numerics, all character strings, all logicals or all factors)
 
-Extractors help you to access or change individual elements of a vector.  For example, you can ‘extract’ elements of a vector using the `[` operator as follows.
+So what happens when you try these commands?
+
+```{r eval=F}
+
+vectora <- c("George", "Matthew", "Marielle")
+vectorb <- c("Yes", 3)
+vectorc <- c(1, TRUE)
+
+mean(c(2,4,6))
+
+
+mean(vectorb)
+
+```
+
+## Accessors
+
+Accessors allow you to access or change individual elements of a vector.  For example, you can ‘subset’ one or more elements of a vector using the `[` operator as follows.
 
 ```{r }
 a[1]
 
 a[3]
+
+a[c(2,3)]
 ```
 
 What happens if you try `a[4]`.  Why?
 
-As well as specifying the particular elements you want, you can also select elements that meet a certain condition.  Suppose we wanted the elements of a that were bigger than 3.  Then we would write
+As well as specifying the particular elements you want, you can also select elements that meet a certain condition.   For example:
+
+```{r }
+a[c(FALSE, FALSE, TRUE)]
+```
+
+The statement above is not something we are ever likely to do, but its helpful to undertstand the following:  Suppose we wanted the elements of a that were bigger than 3.  Then we would write
 
 ```{r }
 a[a>3]
@@ -401,17 +413,19 @@ a
 
 ## Missing elements in vectors
 
-Often your data will include missing values.  R uses ‘NA’ to represent missing values.  For example the following creates a vector with a missing value in the fourth position:
+Often your data will include missing values.  R uses `NA` to represent missing values.  For example the following creates a vector with a missing value in the fourth position:
 
 ```{r }
 myvector <- c(10,21,32,NA,54)
 ```
 
+Note the difference between `NA` (a missing value) and `"NA"` (a character string containing the letters N and A.  I have been tripped up by this a few times when `"NA"` has been entered into a dataset.)
+
 `r exercise("Effect of missing values")`
 
 Try some other functions with myvector to see what impact the missing data point has.
 
-```{r }
+```{r eval=FALSE}
 class(myvector)
 
 plot(myvector)
@@ -433,13 +447,13 @@ sum(is.na(myvector)) # can you explain what this does?
 
 3. Draw a histogram of that vector (look it up!).
 
-4. **Difficult!** Make a vector which is a sample of 100 values from a standard normal distribution.  (The function `rnorm()` will help you with this.).  
+4. **Difficult!** Make a vector which is a sample of 100 values from a standard normal distribution (mean 0 and variance 1).  (The function `rnorm()` will help you with this.).  
 
 5. Now plot a histogram only of the values that are greater than 0.
 
 `r section("Working with data frames")` 
 
-In this section we'll start working with data frames.  Data frames are the objects that R uses to store datasets for analysis.  A dataframe is in reality a set of vectors all of the same length, with each vector representing a variable.  In the lecture we will discuss data frames and how to make sure your data can be represented in one or more data frames.
+In this section we'll start working with data frames.  Data frames are the objects that R uses to store datasets for analysis.  You can think of a dataframe as a set of vectors all of the same length, with each vector representing a variable.  In the lecture we will discuss data frames and how to make sure your data can be represented in one or more data frames.
 
 `r example("Loading data into R from Excel Part 1:  Installing a package")`
 
@@ -447,7 +461,7 @@ R is not used for data entry or storage; you are likely to have data stored as a
 
 So before we can do any analysis we need to import data.  We do this in code like everything else in R.
 
-Base R (‘base’ R is R as it comes when you first download it) cannot read data from Excel files.  But there are several add-on ‘packages’ that can read Excel files (there are packages to read data from most common formats).
+Base R (‘base’ R is R as it comes when you first download it) cannot read data from Excel files.  But there are several add-on ‘packages’ that can read Excel files (there are packages to read data from most common formats).  Currently the best package for reading Excel files is called `readxl` (there are several others but they do not work as well).
 
 Packages are collections of functions and datasets related to a specific task.  They are most often created by R users for their own use and then shared with the community through the Comprehensive R Archive Network (CRAN) or Bioconductor, which makes it very easy to find and install them.
 
@@ -463,7 +477,7 @@ The first time you try to install a package, R will ask you where you would like
 
 Now the package is installed.  We could now access its functions by using the package name and the function name, but its easier to first type:
 
-```{r }
+```{r warning=FALSE}
 library(readxl) # no quotes this time
 ```
 
@@ -493,7 +507,7 @@ Notice that `read_excel()` can extract data from different sheets and ranges of 
 
 Many R packages also have vignettes or websites including simpler guides to their use in specific cases.  readxl has a website that you might find helpful:  https://readxl.tidyverse.org/
 
-## Citing to R and R packages
+## Citing R and R packages
 
 It is important to cite R and R packages you use correctly, particularly where the package is essential to make your analysis reproducible.  To find out how to cite a package use the `citation()` function.
 
@@ -525,7 +539,7 @@ class(TreeData) # what is a 'tibble'?
 
 What kind of an object is ‘TreeData’?
 
-```{r }
+```{r eval=FALSE}
 #See the whole dataset
 TreeData
 
@@ -538,7 +552,7 @@ dim(TreeData)
 View(TreeData)
 ```
 
-```{r }
+```{r eval=FALSE}
 # show the first few rows
 head(TreeData)
 
@@ -555,6 +569,13 @@ Finally, clicking on the arrow next to the object name in the Environment window
 Note that the class for each variable is listed by each column name in the Environment window above.
 
 This is the same output that you would get from the `str()` function.
+
+`r exercise("Vector and data frames")`
+
+1. What are the names of the vectors that comprise the TreeData dataframe?
+2. What is the class of each?
+
+A corollary of the fact that all elements of a vector must have the same class is that all the values in a single column of a dataset must have the same class.  That is, you cannot have a column in your dataset that includes the numeric value `3` and the character value `Green`.  This information would need to be stored in a different way.
 
 `r example("Accessing variables and summary statistics")`
 
