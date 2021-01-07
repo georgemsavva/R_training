@@ -417,6 +417,7 @@ install.packages("readxl") # notice the quotes here
 ```
 
 The first time you try to install a package, R will ask you where you would like to download packages from.  Select any UK CRAN mirror.
+
 Now the package is installed.  We could now access its functions by using the package name and the function name, but its easier to first type:
 
 ```{r }
@@ -427,13 +428,17 @@ library(readxl) # no quotes this time
 
 Now we have the function `read_excel()` available, which reads data from an excel file.
 
-Before we dive in and use it, we need to make sure our data is in a sensible place, and we understand how to use the function.  First, save the example data for this tutorial into a ‘data’ subdirectory of your project.
+Before we dive in and use it, we need to make sure our data is in a sensible place, and we understand how to use the function.  First, save the example data (`treedata.xlsx`) for this tutorial into a ‘data’ subdirectory of your project.
 
-Exercise 3:  “Read the help!”
+Open the dataset in Excel and make sure you understand the data that is there.
+
+`r exercise("Read the help!")`
 
 We are nearly ready to import some data.  But before using a new function its always good to read its documentation.
+
 R and R packages are not as self-explanatory as other software, and so you should expect to spend a fair amount of time, particularly as you are learning R, reading documentation, vignettes, blogs, etc on what R can do, which packages exist, and how to use them.
-read_excel() has a few different options so first we should look at the help file:
+
+`read_excel()` has a few different options so first we should look at the help file:
 
 ```{r }
 ?read_excel # where does the helpfile appear?
@@ -508,13 +513,13 @@ Note that the class for each variable is listed by each column name in the Envir
 
 This is the same output that you would get from the `str()` function.
 
-`r example("WORKED EXAMPLE 5: ACCESSING VARIABLES, AND GENERATING SUMMARY STATISTICS")`
+`r example("Accessing variables and summary statistics")`
 
 A data frame is essentially a set of vectors, all of the same length, that have been stuck together into a rectangle such that each row describes unit of one observation, and each column includes a particular attribute of that observation.
 
-This ‘tidy’ format is how we must store all our datasets for analysis.  If you have used SPSS, Stata or a relational database you will be familiar with this way of organising data. GraphPad Prism works differently, so you will need to change the way you organise data if you move from GraphPad Prism to R.
+This ‘tidy’ format is how we *must* store all our datasets for analysis.  If you have used SPSS, Stata or a relational database you will be familiar with this way of organising data. GraphPad Prism works differently, so you will need to change the way you organise data if you move from GraphPad Prism to R.
 
-See the reference below on ‘tidy data’ for how to organise your data into one or more tidy data frames, you may not immediately think this is possible for your dataset, but it is! (and it is essential!)
+See the reference below on ‘tidy data’ for more on how to organise your data into one or more tidy data frames, you may not immediately think this is possible for your dataset, but it is! (and it is essential!)
 
 For complex datasets, for example high throughput genomics combined with meta-data, your data might be stored as more than one dataframe, one for the main data and a separate data frame for the meta-data.
 
@@ -536,161 +541,116 @@ mean(TreeData$height)
 boxplot(TreeData$height)
 ```
 
-This can be a useful way to summarise individual variables, although as a summary table goes it's a bit limited!  but it’s often more helpful to be able to summarise according to the levels of another factor.
+This can be a useful way to summarise individual variables, although as a summary table it's very  limited!  Often we want to be able to summarise according to the levels of another factor.
 
-Let’s get the heights by species.  We can do this using the ‘aggregate’ function.  But first we need to fix the names of the variables in the data frame.  R will import data frame columns
+(Here we will just discuss summarising a single variable by a single stratifying variable.  In a separate vignette I discussion options for creating summary tables of statistics.)
 
+We will look at how to summarise a continuous 
 
+## A continuous variable stratified by a grouping variable
 
-> aggregate( data = TreeData, height ~ species.name, FUN=mean)
-            Group.1         x
-1    A. aulococarpa  6.188889
-2    A. polystachya  3.497222
-3 C. cunninghamiana  8.138889
-4        E. pellita  5.283333
-5    M. viridiflora 11.280556
+Let’s get the heights by species.  We can do this using the ‘aggregate’ function:
 
+```{r }
+aggregate( height ~ species.name, FUN=mean, data = TreeData, )
+```
 
-Look at the help file for aggregate() to understand how the arguments are specified.
-For a categorical variable, a summary of frequency counts might be the most appropriate.  We can get this with the table() function:
-> table(TreeData$species.name)
+Look at the help file for `aggregate()` to understand how the arguments are specified.
 
-   A. aulococarpa    A. polystachya C. cunninghamiana
-               36                36                36
-       E. pellita    M. viridiflora
-               36                36
+Here `aggregate()` uses the 'formula' interface.  It's important to understand this now because this is how variables are specified in many different R functions, eg to run analyses and make graphics.  Formulas are generally used in R to specify relationships between variables in a dataset.  Different functions use forumulas in different ways, but in general the left hand side of a formula represents one or more dependent variables, and the right hand represents variables that act as predictors or grouping variables.
 
-The ‘table’ function can also generate cross-tabs:
+`aggregate()` will use the function specified to its `FUN` argument to summarise the left-hand side variable, stratified by the right hand side variable.
 
-> table(TreeData$species.name, TreeData$health)
+The final `data` argument tells aggregate where to look for the variables that have been named.
 
-                     N  Y
-  A. aulococarpa     7 29
-  A. polystachya    17 19
-  C. cunninghamiana  9 27
-  E. pellita         4 32
-  M. viridiflora     2 34
+## Tabulating a categorical variable over groups
+
+For a categorical variable, a summary of frequency counts might be the most appropriate.  We can get most simply get this with the `table()` function:
+
+```{r }
+table(TreeData$species.name)
+```
+
+The ‘table’ function can also generate cross-tabs, by specifying two or three variables.  Note here how they are defined using the accessor operator.  `table` does not use the forumula interface we discussed above, although the sister function `xtabs()` does.
+
+```{r }
+table(TreeData$species.name, TreeData$health)
+```
 
 Tables of numbers are useful, but it might be more helpful to see the proportion of healthy trees by species.  To get this we can pass the table we just made into the prop.table() function:
 
-> table1 <- table(TreeData$species.name, TreeData$health)
-> prop.table(table1)
+```{r }
+table1 <- table(TreeData$species.name, TreeData$health)
+prop.table(table1)
 
-                             N          Y
-  A. aulococarpa    0.03888889 0.16111111
-  A. polystachya    0.09444444 0.10555556
-  C. cunninghamiana 0.05000000 0.15000000
-  E. pellita        0.02222222 0.17777778
-  M. viridiflora    0.01111111 0.18888889
+```
 
+The table above has calculated the ‘cell proportions’.  If we want the row percentages we need to set the `margin` option in `prop.table()` appropriately.  And we could round this to 2 d.p. by passing the resulting proportion table into the round() function:
 
-The table above has calculated the ‘cell proportions’.  If we want the row percentages we need to set the ‘margin’ option appropriately.  And we could round this to 2 d.p. by passing the resulting proportion table into the round() function:
-
-
-> proptab1 <- prop.table(table1, margin=1)
-
-> round(proptab1, digits=2)
-
-                       N    Y
-  A. aulococarpa    0.19 0.81
-  A. polystachya    0.47 0.53
-  C. cunninghamiana 0.25 0.75
-  E. pellita        0.11 0.89
-  M. viridiflora    0.06 0.94
-
+```{r }
+proptab1 <- prop.table(table1, margin=1)
+round(proptab1, digits=2)
+```
 
 Remember ‘a[1]’ from earlier that returned the first element of the vector ‘a’? You can do a similar thing with two-dimensional structures like tables and data frames to return individual elements, rows or columns.  For example:
 
-> proptab1[1,1] # get the element on the first row and first column
-[1] 0.1944444
+```{r }
+proptab1[1,1] # get the element on the first row and first column
 
-> proptab1[,2] # this returns the second column only.
-   A. aulococarpa    A. polystachya C. cunninghamiana        E. pellita    M. viridiflora
-        0.8055556         0.5277778         0.7500000         0.8888889         0.9444444
+proptab1[,2] # this returns the second column only.
 
-> proptab1[4,] # return the fourth row only
-        N         Y
-0.1111111 0.8888889
+proptab1[4,] # return the fourth row only
+```
 
-Exercises
+`r exercise("Tables")`
 
 What would be an easy way to convert these proportions to percentages?
 Can you use prop.table() to generate column percentages instead of row percentages?
 
 Further reading on the ‘extract’ operators: https://github.com/lgreski/datasciencectacontent/blob/master/markdown/rprog-extractOperator.md
 
-WORKED EXAMPLE 5B – THE TABLE1 PACKAGE
-The functions described above do the job of tabulating and summarising data, but are not particularly neat ways to generate summary statistics from datasets.
-Surprisingly, ‘Base’ R does not really have a good set of functions to make descriptive tables, but there are much better functions in add-on packages for creating and displaying descriptive statistics.
-The ‘table1’ package is a great example; it will describe a dataset it a way that is suitable for a ‘table 1’ in an academic paper.
-Install the table1 package from CRAN as you did for readxl earlier.
-> install.packages(“table1”)
 
-Then either:
-> table1::table1( data = TreeData, ~ health | species.name )
+`r example("Making basic plots")`
+We’ve already seen the box plot in the previous section.  We can ask for this in a slightly different way, and stratify it by species:
 
-Or
+```{r }
+boxplot(height ~ species.name, data=TreeData)
+```
 
-> library(table1)
-> table1( data = TreeData, ~ health | species.name )
+We’ll make some improvements to this box plot when we discuss graphics.
 
-This table is good to be directly pasted into a report.  See the table1 package ‘vignette’ to learn more about how this works and how to change the output if you need to.
-https://cran.r-project.org/web/packages/table1/vignettes/table1-examples.html
-
-WORKED EXAMPLE 6:  MAKING BASIC PLOTS; FORMULAS
-We’ve already seen the box plot in the previous section.  We can ask for this in a slightly different way, and stratify it by species
-> boxplot(height ~ species.name, data=TreeData)
-
-Notice here that we are no longer using the $ operator to access columns of the data frame.   Instead we just need to specify the variable names, and then supply the argument ‘data=TreeData’ to the function.  This argument tells boxplot which data frame to look in for the objects that we want to work with.
-What happens if we forget to specify the dataset?
-Formulas
-Next notice how we’ve specified the relationship.  Here, ‘height ~ species.name’ is an example of a formula.  Formulas are objects that R uses to describe relationships between variables.  This formula says ‘height depends on species.name’.  boxplot() interprets this to mean that we want a box plot for height stratified by species.name, which seems reasonable!
-The ‘table1’ function above also used formulas, but in a slightly different way.
-We’ll make some improvements to the box plot we have created on day 2 when we discuss graphics.
-
-WORKED EXAMPLE 7: SIMPLE HYPOTHESIS TESTS AND ESTIMATION
+`r example("SIMPLE HYPOTHESIS TESTS AND ESTIMATION")`
 
 Is height associated on tree health?  We can generate a simple box plot as previously to examine this this time with some labels):
-> boxplot( height ~ health., data=TreeData , xlab="Height", ylab="Health")
+
+```{r }
+boxplot( height ~ health, data=TreeData , xlab="Height", ylab="Health")
+```
 
 It looks like the two variables might be related,  but we would like to perform a t-test to see if the difference is statistically significant, and to get an estimate (with confidence interval) for the difference.
-The syntax is almost exactly the same as that used to generate the box plot.  We use the same formula:
-> t.test( height ~ health. , data=TreeData)
 
-	Welch Two Sample t-test
+The syntax is almost exactly the same as that used to generate the box plot.  We use the same formula `height~health` to again specify that height depends on health in our analysis:
 
-data:  height by health.
-t = -3.7752, df = 66.076, p-value = 0.0003448
-alternative hypothesis: true difference in means is not equal to 0
-95 percent confidence interval:
- -2.8742163 -0.8857401
-sample estimates:
-mean in group N mean in group Y
-       5.405128        7.285106
+```{r }
+t.test( height ~ health , data=TreeData)
+```
 
 Note that t.test has returned ‘Welch Two Sample t-test’.  This is not the traditional t-test with equal variances assumes, by default R runs a t-test that does not assume equal variances across groups.   This is probably better, but if you want the traditional test you’ll have to look at the help file to get it.
-> t.test( height ~ health. , data=TreeData, var.equal=TRUE)
-
-	Two Sample t-test
-
-data:  height by health.
-t = -3.5629, df = 178, p-value = 0.0004708
-alternative hypothesis: true difference in means is not equal to 0
-95 percent confidence interval:
- -2.9212420 -0.8387143
-sample estimates:
-mean in group N mean in group Y
-       5.405128        7.285106
 
 In general it’s useful to read the documentation for any new function that you are using, because the default R behaviour might not be what you expect.
+
 Note:  Note from the t.test help file: the default options are shown first, so here var.equal=FALSE is the default which you had to override with var.equal=TRUE in the your function call.
+
 Exercise:  How would you run a paired t-test?  (No need to do it as we don’t have suitable data, but look at the help file.
 
+```
 WORKED EXAMPLE 8: USING A SCRIPT
-This is all starting to get a bit complicated.  Rather than doing each of these steps one at a time it is much better to keep our code together in an R script.
+
 That way, when we come back to it in six months or something changes in our data, or we want to tweak something in our analysis, we can remember what we did.  An R script is just a text file with a series of R commands in, that load your data and conduct your analysis when they are run in the right order.
 RStudio has good facilities for writing R scripts.  To create a new one click on the    button in the top left corner or go to File -> New File -> R Script in the menus.  Then you can enter your functions for loading libraries, getting data, data management descriptive analysis and plots etc.
 Let’s write a short script to generate a new variable in our data frame.  Suppose we want to log transform the height variable, and create a new variable called logHeight, then we want to plot logHeight against dgl.  We can do this by adding the following lines to our script:
+
+
 TreeData$logHeight <- log(TreeData$height)
 
 plot( logHeight ~ dgl, data = TreeData)
