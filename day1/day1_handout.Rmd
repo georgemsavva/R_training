@@ -4,7 +4,10 @@ author: "George Savva, (QIB)"
 output:
   html_document:
     df_print: paged
+    theme: cosmo
 ---
+
+
 
 ```{r echo=FALSE}
 exerciseNumber=0;
@@ -13,8 +16,13 @@ exercise <- function(x="") {
   }
 sectionNumber=0;
 section <- function(x="") {
-  sectionNumber <<- sectionNumber+1; return(sprintf("# Section %d. %s", sectionNumber, x))
+  sectionNumber <<- sectionNumber+1; return(sprintf("# **Section %d. %s**", sectionNumber, x))
   }
+
+subsection <- function(x="") {
+  return(sprintf("## %s", x))
+  }
+
 
 exampleNumber=0;
 example <- function(x="") {
@@ -23,24 +31,27 @@ example <- function(x="") {
 
 ```
 
-`r section("Preface")` 
+`r section("Introduction")` 
 
-This course will introduce R statistical software, some basics of how it works, guides to performing common operations, where to go for further support and some tips for good practice.
+This course will introduce R statistical software, examples of performing common tasks in scientific data analysis, where to go for further support and some tips for good practice when using R.
 
-The aim is to become familiar with the R/RStudio environment and some common functions so that you can learn the specific functions that you need on your own or with further training.  Specifically this course will bring you up to the level you need to attend the externally run statistics courses provided at by NBI.
+The aim is to become familiar with the R/RStudio environment and some common functions and workflows.  This will enable you to learn the specific functions that you need on your own or with further training.  
+Specifically this course will bring you up to the level you need to attend the externally run statistics courses provided at NBI, that assume a working knowledge of R and RStudio.
 
 The data you need to complete the training exercises is in the accompanying file (Introstat.xlsx).  All of the commands for the worked examples and the exercises is in the file TutorialScript.R.  The commands for the worked examples are also typed out here.
 
-`r section("Learning objectives")` 
+For those who have run through these notes already and completed the exercises there are some additional exercises that you can try to complete during the course.
 
-## Specific tasks:
+`r subsection("Learning objectives")` 
+
+### Specific tasks:
 
 Day 1:
 
 *	Making an Rstudio project
 *	Loading packages
 *	Loading a dataset into R from an Excel file
-*	Exploring your data; calculating descriptive statistics
+*	Exploring your data and calculating descriptive statistics
 *	Simple hypothesis tests
 
 Day 2:
@@ -50,8 +61,10 @@ Day 2:
 Day 3:
 
 * Making graphics using 'base' graphics and the ggplot2 package
+* Putting it all together
 
-How to use R
+### How to use R
+
 * Using R and RStudio
 * RStudio ‘projects’ and a good workflow
 * The command line interface
@@ -59,7 +72,8 @@ How to use R
 * Getting help
 * Using packages
 
-How R works
+### How R works
+
 * Objects and functions
 * Data frames and vectors
 * Types of data: numerics, factors, and strings
@@ -70,11 +84,11 @@ How R works
 
 ## What are R and RStudio?
 
-R is an open source statistics package, initially developed during the 1990s, and that has now become the world’s most widely used and comprehensive statistical software.  R calls itself a ‘programming language *and* environment for statistic computing’.  
+R is a free and open source statistics package, initially developed during the 1990s, and that has now become the world’s most widely used and comprehensive statistical software.  R calls itself a ‘programming language *and* environment for statistic computing’.  
 
 That is, 'R' refers both to the software itself and the programming language that you use to interact with it.
 
-RStudio is a integrated development environment (IDE) for R that makes working R much easier.  Most R users use RStudio and I recommend using RStudio for new users.
+RStudio is a free open source integrated development environment (IDE) for R that makes working R much easier.  Most R users use RStudio and I recommend using RStudio for new users.
 
 The great strength of R is in its contributed packages, these are community written add-ons that provide functions to perform almost any statistical, programming, or data-related task.  We will introduce some commonly used packages for data management, analysis and graphing during this course.
 
@@ -82,19 +96,19 @@ The great strength of R is in its contributed packages, these are community writ
 
 ## Getting R and RStudio
 
-Download and install the latest version of R from https://cran.r-project.org/ 
+1. Download and install the latest version of R from https://cran.r-project.org/ 
 
-Then download and install RStudio from https://www.rstudio.com/ 
+2. Then download and install RStudio from https://www.rstudio.com/ 
 
-Start RStudio.  It will detect your installation of R, and you should see a screen like this:
+3. Start RStudio.  It will detect your installation of R, and you should see a screen like this:
 
-![RStudio Window](images/rstudio.png)
+![Figure:  RStudio Window](images/rstudio.png)
 
-On the left is the console window, where you type commands and see output.  The windows on the right hold various useful tabs, here the top pane is showing the data I happen to currently have loaded (yours will be empty) and a viewer showing part of my filesystem at the bottom.  These right-hand windows can also show graphs, help files, and your command history.
+On the left is the console window, where you type commands and see output.  The windows on the right hold various useful tabs, here the top pane is showing the data I happen to currently have loaded in my environment (yours will initially be empty) and a viewer showing part of my filesystem at the bottom.  These right-hand windows can also show graphs, help files, and your command history.
 
-## Check R and RStudio are working
+## Check R and RStudio are working, run your first command
 
-First task: check RStudio is working.  Click in the console window and type:
+Click in the console window and type:
 
 ```{r eval=FALSE, echo=TRUE}
 1+2
@@ -108,7 +122,6 @@ Press return on your keyboard.  You should see:
 
 This is the basic way in which R works.  We enter commands at the command prompt, and we get the output in the console window.
 
-(We could do all of our work this way, but to chain together multiple commands into an analysis, and to keep our work safe we will write scripts (.R files), which are just sequences of commands like this that are executed in order.)
 
 `r exercise("More maths")`
 
@@ -116,35 +129,45 @@ Try a few other mathematical functions at the R console.
 
 `r section("Using projects and scripts")`
 
-Before we go any further, we are going to start an RStudio ‘project’ to organise our work during this course.  Using projects helps us to keep all of the data and analysis for a particular piece of work in the same place.
+Before we go any further, we are going to start an RStudio ‘project’ to organise our work during this course. Using projects helps us to keep all of the data and analysis for a particular piece of work in the same place.
 
-Click on ‘New -> New project’ in the toolbar.  Click ‘Start a new project in a brand new working directory’.  Then click ‘new project’ on the next screen.
+Click on ‘New &rarr; New project’ in the main toolbar.  Click ‘Start a new project in a brand new working directory’.  Then click ‘new project’ on the next screen.
 
 Now you can choose where to create the new directory for your R project, and what to call it.  Make a project called ‘Rtraining’ or something like that, somewhere in your personal filestore.
 
-Now when you return to the main RStudio window you are working within your project.  Notice that the working directory has switched to the new directory that you created.  
+Now, when you return to the main RStudio window you are working within your project.  Notice that the 'working directory' has automatically switched to the new directory that you created, and the 'files' tab on the bottom left of the window is now showing the root of the project directory you created.
 
 ## Making a script
 
-Rather than typing commands into the console, we will type our commands into scripts and execute them from there.  With a script you can run and re-run analyses that use many different functions for data loading, cleaning, analysing and reporting.
+We could do everything by typing commands into the console window as we have already seen, but this is not good if we want to remember or repeat something we have done, or share it with others.
 
-The benefits of using scripts are efficiency, reproducibility and organisation.
+So instead we will type our commands into R scripts and run them from there.  With a script you can run and re-run bigger analyses that chain together all the functions you need for data loading, cleaning, analysing and reporting.
 
-1. Make a new script.  Click on File -> New File -> R Script in the main RStudio window.
+Using scripts mean we can develop complex analyses, and that when we come back to them in six months, if something changes in our data that means we need to redo everything, or we want to tweak something in our analysis because of a reviewer's comment, we can easily do this without having to remember or reconstruct what we did.  
 
-You will see 
+It is good to keep a separate R script for each analysis that you do, such that each starts with the functions to load the required data, do any cleaning or recoding that is necessary, then to perform and report the data analysis.
 
-2. Save your script (even if it is empty).  Having unsaved scripts is a bad idea, RStudio is sometimes unstable and while it will try to recover unsaved work it is not guarenteed.  Get into the habit of saving your script regularly.
+I have made an example of such a script, annotated with comments, in the files that accompany this handout.
 
-## Running code from scripts
+`r example("Make a script")`
 
-You can run code from scripts in several ways.
+1. Make a new script.  Click on File &rarr; New File &rarr; R Script in the main RStudio window.  An empty 
+
+2. Save your script with a sensible filename (even though it is empty).  Having unsaved scripts is a bad idea, RStudio is sometimes unstable and while it will try to recover unsaved work it is not always guarenteed to.  Get into the habit of saving your scripts regularly.
+
+3. Put some of the mathematical functions that you have already tried into your script, with one on each line.
+
+You can now run code from scripts in several ways.
 
 1. If you press 'run' or type Ctrl+Enter on the keyboard, RStudio will send the line that the cursor is on to the R console and will run it.
 2. If you highlight an area of the script and then hit 'run' (or press Ctrl+Enter) then RStudio will send all the highlighted code to the R console.
-3. If you save the file, then press 'source', R will run all the commands in the file in sequence. You won't see any output unless you specifically ask for it (or press 'source with echo').
+3. If you save the file, then press 'source', R will run all the commands from that file in sequence. You won't see any output unless you specifically ask for it (or press 'source with echo').
 
-There are some subtle differences between what happends with run and source, but in general you can use either.  I typically use 'run' while developing scripts and 'source' when they are finished to get the final answers.  We'll discuss a good workflow later in the course.
+There are some subtle differences between what happends with run and source, but in general you can use either.  I typically use 'run' while developing scripts and 'source' when they are finished to get the final answers.
+
+If you have your raw data saved, and you keep your scripts, then you don’t need to save your results or any of the variables that you generated or modified during your analysis.  So long as the orginal data doesn’t change, running the script will reproduce all of your analysis and output.  This is a better way of working than trying to save your environment with all of your results and tables in.
+
+I have created a script including all the analyses from this tutorial, in TutorialScript.R.  Load this and have a look around.  Notice my comments to remind myself why I did things, this might be helpful when I next come to revise the analysis!
 
 **Important:** Keep the R scripts and the data associated with this training course in the project directory, so that you can access them easily.
 
@@ -157,18 +180,38 @@ for more information on using projects and scripts
 
 `r example("Object assigments")`
 
-So far we have used R as a calculator.  Which is fine but not much help if we want to work with data.  In this section we'll learn about how R stores and applys functions to data.  First some terminology:
+So far we have used R as a calculator.  Next we'll learn about how R stores and applys functions to data.  First some terminology:
 
-## Functions
+### Functions
 
 Everything in R is done by executing ‘functions’.  When you typed 1+2 at the console above you were executing the + function, with 1 and 2 as its arguments, and the result was printed in the console window.
+
+Functions are more commonly called by their *name*, with their *arguments* in brackets.  For example, to get say the logarithm (base 10) of 100, we would type
+
+```{r }
+### Try this directly in the console, and by running it from your new script.
+log(x=100, base=10)
+```
+
+Here, `log` is the name of the function, with `x` and `base` its arguments.  The result (2) is the *value* of the function (the value is what is returned).
+
+Try each of the following commands.  Do you understand what they do any why?
+
+```{r eval=FALSE }
+log(x=100, base=10)
+log(x=100)
+log(base=10, x=100)
+log(100,10)
+log(10,100)
+log()
+log
+```
 
 ## Objects
 
 Instead of directly displaying the value of the function (‘value’ is what R calls the result of a function), you can give it a name and store it for later use:
 
 ```{r } 
-### Try this directly in the console, and by running it from your new script.
 x = 1+2
 ```
 
@@ -412,7 +455,7 @@ Here we will import a dataset from Excel using the `readxl` package.
 
 First, readxl needs to be installed.  You can do this through the tools menu or by typing:
 
-```{r }
+```{r eval=FALSE}
 install.packages("readxl") # notice the quotes here
 ```
 
@@ -440,7 +483,7 @@ R and R packages are not as self-explanatory as other software, and so you shoul
 
 `read_excel()` has a few different options so first we should look at the help file:
 
-```{r }
+```{r eval=FALSE}
 ?read_excel # where does the helpfile appear?
 ```
 
@@ -643,172 +686,152 @@ Note:  Note from the t.test help file: the default options are shown first, so h
 
 Exercise:  How would you run a paired t-test?  (No need to do it as we don’t have suitable data, but look at the help file.
 
-```
-WORKED EXAMPLE 8: USING A SCRIPT
-
-That way, when we come back to it in six months or something changes in our data, or we want to tweak something in our analysis, we can remember what we did.  An R script is just a text file with a series of R commands in, that load your data and conduct your analysis when they are run in the right order.
-RStudio has good facilities for writing R scripts.  To create a new one click on the    button in the top left corner or go to File -> New File -> R Script in the menus.  Then you can enter your functions for loading libraries, getting data, data management descriptive analysis and plots etc.
-Let’s write a short script to generate a new variable in our data frame.  Suppose we want to log transform the height variable, and create a new variable called logHeight, then we want to plot logHeight against dgl.  We can do this by adding the following lines to our script:
 
 
+`r example("Transformations")`
+
+Just as we can apply mathematical functions to objects representing single numbers and vectors, we can apply them to columns in our data frame to transform or combine variables.
+
+For example, suppose we want to log transform the height variable, and create a new variable called logHeight.  Then we would use:
+
+```{r }
 TreeData$logHeight <- log(TreeData$height)
+```
 
+As when dealing with vectors above, R will apply the function individually to each element of the column, creatig a new variable in our data.
+
+Check that this variable has been created.
+
+Now we can plot the new variable against dgl:
+```{r }
 plot( logHeight ~ dgl, data = TreeData)
-
-Although TreeData$logHeight didn’t exist, it will be created by this command.
-To run a whole script at once, press Ctrl+Shift+Enter.
-To run a single command, place the cursor on the line you want to run and press Ctrl+Enter
-To run one or more lines in a block, highlight the area you want to run and press Ctrl+Enter
-Best practice for working with R scripts:
-If you have your raw data saved, and you keep your scripts, then you don’t need to save your results or any of your generated variables.  So long as the orginal data doesn’t change, running the script will completely reproduce all of your analysis and output.  This is a better way of working than trying to save your environment with all of your results and tables in.
-I have created a script including all the analyses from this tutorial, in TutorialScript.R.  Load this and have a look around.  Notice my comments to remind myself why I did things, this might be helpful when I next come to revise the analysis!
+```
 
 
-DAY 2
 
 
-WORKED EXAMPLE 9:  ESTIMATING A SIMPLE REGRESSION MODEL
+`r example("Linear regression")`
 
-In the previous section we saw that dgl could be used to predict tree height.  We can estimate a linear model for this relationship using the lm() command:
+In the previous section we saw that dgl could be used to predict tree height.  We can estimate a linear model for this relationship using the lm() function
+
+```{r }
 lm1 <-  lm( height ~ dgl, data=TreeData  )
-Note this command has the same was of specifying a formula and reference to the data as the boxplot and t.test commands above.
-This command creates a ‘linear model’ object and names it ‘lm1’.  The linear model object contains the estimated linear regression model with ‘height’ as the outcome and ‘dgl’ as the predictor.
+```
+
+Note this function uses the same 'formula' interface as the t-test, boxplot functions above.
+
+`lm()` creates a ‘linear model’ object.  The linear model object contains the all the details of an estimated linear regression model with ‘height’ as the outcome and ‘dgl’ as the predictor.
+
 There are now lots of different functions you can use to extract elements of this model.
 To see a description of all the information contained within the object, use:
-> attributes(lm1)
-$names
- [1] "coefficients"  "residuals"     "effects"       "rank"          "fitted.values"
- [6] "assign"        "qr"            "df.residual"   "contrasts"     "xlevels"
-[11] "call"          "terms"         "model"
 
-$class
-[1] "lm"
+```{r }
+attributes(lm1)
+```
 
-But generally you won’t need to use these attributes directly.  Different functions can be used to extract the information in readable and usable formats:
+But generally you won’t need to use these attributes directly.  Different functions exist to extract the information in readable and usable formats:
+
 The summary command that we used earlier can also ‘summarise’ a linear model.  It produces the standard linear regression output that you would expect from any statistics package.
-> summary(lm1)
 
-Call:
-lm(formula = height ~ dgl, data = TreeData)
-
-Residuals:
-    Min      1Q  Median      3Q     Max
--5.9033 -1.3254 -0.2229  1.4960  8.5181
-
-Coefficients:
-            Estimate Std. Error t value Pr(>|t|)
-(Intercept)  2.03057    0.48493   4.187 4.43e-05 ***
-dgl          0.34111    0.03182  10.721  < 2e-16 ***
----
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
-
-Residual standard error: 2.353 on 178 degrees of freedom
-Multiple R-squared:  0.3924,	Adjusted R-squared:  0.389
-F-statistic: 114.9 on 1 and 178 DF,  p-value: < 2.2e-16
+```{r }
+summary(lm1)
+```
 
 To get the corresponding analysis of variance table, use the anova() function:
-> anova(lm1) # Note by default R returns ‘type III’ ANOVA.
-Analysis of Variance Table
 
-Response: height
-           Df Sum Sq Mean Sq F value    Pr(>F)
-dgl         1 636.44  636.44  114.95 < 2.2e-16 ***
-Residuals 178 985.55    5.54
----
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+```{r }
+anova(lm1) # Note by default R returns ‘type III’ ANOVA.
+```
 
-To plot the data with the regression model added, use the ‘plot’ function then abline() to add the line:
+To plot the data with the regression model added, use the ‘plot’ function as previously, then abline() to add the line:
 
-> plot( height ~ dgl, data = TreeData)
-> abline(lm1, col="red")
+```{r }
+plot( height ~ dgl, data = TreeData)
+abline(lm1, col="red")
+```
 
 
-WORKED EXAMPLE 10: REGRESSION PREDICTIONS AND DIAGNOSTICS, CATEGORICAL VARIABLES (FACTORS)
+`r example("REGRESSION PREDICTIONS AND DIAGNOSTICS, working with CATEGORICAL VARIABLES (FACTORS)")`
 
 After estimating a regression model we should inspect it to check its underlying assumptions are met.   R will show you some useful diagnostic plots if you run:
-> plot(lm1)
+
+```{r }
+plot(lm1)
+```
 
 If we want to directly check the predicted values or residuals from the model we can use the predict and resid functions
-> predict(lm1)
-> resid(lm1)
+
+```{ r}
+predict(lm1)
+resid(lm1)
+```
 
 These functions generate vectors with each element corresponding to a row in the original data frame.  So element [1] of the vector created by predict() is the predicted (fitted) value of height for the first row in TreeData under our model.
-A model with a categorical predictor
-Now suppose we wanted to model the relationship between height and species.  Species is a categorical variable, rather than a continuous numeric as dgl was, but the way in which we estimate the model in R is the same. That is, we do this by running:
-> lm2 <-  lm( height ~ species.name, data=TreeData  )
-> summary(lm2)
 
-Call:
-lm(formula = height ~ species.name, data = TreeData)
+`r example("Using factors to represent categorical variables")`
 
-Residuals:
-    Min      1Q  Median      3Q     Max
--5.0806 -0.9076  0.1139  0.9028  3.5194
+So far we have not considered how R represents categorial variables.  R has a special type called a 'factor' whereby categories are represented by integers corresponding to groups, with each integer given a text label.  We'll illustrate their use with a simple example:
 
-Coefficients:
-                              Estimate Std. Error t value Pr(>|t|)
-(Intercept)                     6.1889     0.2346  26.375  < 2e-16 ***
-species.nameA. polystachya     -2.6917     0.3318  -8.111 8.46e-14 ***
-species.nameC. cunninghamiana   1.9500     0.3318   5.876 2.07e-08 ***
-species.nameE. pellita         -0.9056     0.3318  -2.729    0.007 **
-species.nameM. viridiflora      5.0917     0.3318  15.344  < 2e-16 ***
----
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+## A model with a categorical predictor
 
-Residual standard error: 1.408 on 175 degrees of freedom
-Multiple R-squared:  0.7861,	Adjusted R-squared:  0.7813
-F-statistic: 160.8 on 4 and 175 DF,  p-value: < 2.2e-16
+Suppose we wanted to model the relationship between tree height and species.  'Species' is a categorical variable, rather than a continuous numeric as dgl was, but the way in which we estimate the model in R is the same. That is, we do this by running:
 
-Notice that we did not need to create any dummy variables, R did this automatically, and chose the level with the lowest value (alphabetically) to be the reference value. Because the species.name variable was a ‘character’ variable, R understood that we wanted it to be analysed in categories (just as it did when we estimated the box plots).
+```{r }
+lm2 <-  lm( height ~ species.name, data=TreeData  )
+summary(lm2)
+```
+
+Notice that we did not need to create any 'dummy' variables to indicate the different levels, R did this automatically, and chose the level with the lowest value (alphabetically) to be the reference value. 
+
+Because the species.name variable was a ‘character’ variable, R understood that we wanted it to be analysed in categories (just as it did when we estimated the box plots).
+
+Much of the time, if we try to use a character variable in an analysis, R will interpret this as a factor.
+
 If we had used the numeric species number variable, then R would not have automatically realised this, and we would get a non-sensical regression.
-> lm3 <-  lm( height ~ species., data=TreeData  )
-> summary(lm3)
 
-Call:
-lm(formula = height ~ species., data = TreeData)
+```{r }
+lm3 <-  lm( height ~ species, data=TreeData  )
+summary(lm3)
+```
 
-Residuals:
-    Min      1Q  Median      3Q     Max
--6.1778 -1.4722  0.5222  1.5167  5.1333
+To make R treat a numeric variable as categorical it needs to be turned into a ‘factor’ variable.  A factor is a numeric variable where the numbers just represent groups, they lose their meaning as numbers.
 
-Coefficients:
-            Estimate Std. Error t value Pr(>|t|)
-(Intercept)   2.6944     0.3978   6.773 1.77e-10 ***
-species.      1.3944     0.1199  11.625  < 2e-16 ***
----
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Rather than overwriting the species numeric variable, we’ll create a new one for the factor:
 
-Residual standard error: 2.276 on 178 degrees of freedom
-Multiple R-squared:  0.4316,	Adjusted R-squared:  0.4284
-F-statistic: 135.1 on 1 and 178 DF,  p-value: < 2.2e-16
-
-To make R treat a numeric variable as categorical it needs to be turned into a ‘factor’ variable.  A factor is a numeric variable where the numbers just represent groups, they lose their meaning as numbers.  Rather than overwriting the species numeric variable, we’ll create a new one for the factor:
 First we’ll check the class of TreeData$species and ask for a summary:
-> class(TreeData$species.)
-[1] "numeric"
-> summary(TreeData$species.)
-   Min. 1st Qu.  Median    Mean 3rd Qu.    Max.
-      1       2       3       3       4       5
+
+```{r }
+class(TreeData$species)
+summary(TreeData$species)
+```
+
+We see a summary that is suitable for a continuous numeric (mean, median etc)
 
 Now make a new factor variable and add it to the dataframe:
-> TreeData$speciesF <- factor(TreeData$species.)
+
+```{r }
+TreeData$speciesF <- factor(TreeData$species)
+```
 
 Now check the class and the summary again.  R realises that a factor should be summarised by a tabulation not mean, median etc.
-> class(TreeData$speciesF)
-[1] "factor"
-> summary(TreeData$speciesF)
- 1  2  3  4  5
-36 36 36 36 36
 
-Finally the regression model should look correct again, that is with one row per category (compared to a reference group).
-> lm4 <- lm( height ~ speciesF, data=TreeData  )
-> summary(lm4)
+```{r }
+class(TreeData$speciesF)
+summary(TreeData$speciesF)
+```
+
+Finally the regression model should look sensible again, that is with one row per category (compared to a reference group).
+
+```{r }
+lm4 <- lm( height ~ speciesF, data=TreeData  )
+summary(lm4)
+```
 
 Exercise
 a)	Are the regression coefficients the same as those estimated for model 2?  If not, why not?
-b)	The function ‘tab_model’ in the sjplot package provides nicely laid out summaries of regression models.  Give it a try.
+b)	The function `tbl_regression()` in the `gtsummary` package provides nicely laid out summaries of regression models.  Give it a try.
 
-Day 2 – Graphics will be sent separately
+
 ANSWERS AND COMMENT ON EXERCISES
 1a.:  Type y = x+3 or y <- x+3
 1b.:  Subsequently changing x doesn’t change the value of y.  When y was created it used only the value of x at that time, and changing x afterwards doesn’t change y.
