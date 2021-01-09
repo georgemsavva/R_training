@@ -1,0 +1,110 @@
+
+
+--- 
+title: Reading data, rbind, merge.
+author: George Savva
+date: January 2020
+output: html_document
+--- 
+
+# Worked example
+
+## Loading data from Excel, merging, cleaning and coding.
+
+In this example we will
+* create a dataset using data stored in three separate sheets.  
+* create a new variable based on an existing variable
+* identify and remove some obvious outliers
+
+First make sure you are working in the directory that your data is kept, ideally by making a project.
+
+## Loading data
+
+Here our data is in three separate sheets in the same workbook
+
+```{r }
+library(readxl)
+treated <- read_excel(path="day 2/walkingspeed.xlsx", sheet="treated")
+control <- read_excel(path="day 2/walkingspeed.xlsx", sheet="control")
+meta <- read_excel(path="day 2/walkingspeed.xlsx", sheet="meta")
+```
+
+```{r }
+library(dplyr)
+bind_rows(treated, control,)
+
+```
+We want to rbind the rows from the treated and control patients so that they are in the same data frame.  But becuase the column names are not exactly the same this won't work:
+
+```{r }
+
+``` {r eval=FALSE}
+# This gives an error
+outcomes <- rbind(treated, control)
+``` 
+
+To look at the names of a data frame, use the 'names()' function.
+
+```{r }
+names(treated)
+names(control)
+``` 
+
+You can also use 'names()' to assign new names to the dataframe.  We could do this:
+
+```{r eval=FALSE}
+names(treated) <- c("patid", "time")
+names(control) <- c("patid", "time")
+```
+
+But we need to be sure we have the order right.  Here it's probably fine because we only have two columns, but for a more complex dataset it would be easy to get the column order wrong.  It's safer to rename the specific column that we need to rename:
+
+```{r eval=FALSE}
+names(control)[names(control)=="walktime"] <- "time"
+```
+
+Make sure you understand how this command worked.
+
+Now we can rbind the two frames together:
+
+```{r }
+outcomes <- rbind(treated, control)
+str(outcomes)
+```
+
+## Adding a new column
+
+Now although we have all our data in a single frame, we can no longer tell how each patient was treated!  We should have added a variable to each data frame before rbinding to say what the treatment was.
+
+Lets make a new column called 'treatment' that will have two levels, 'treated' and 'control'.  You add a new variable to a dataframe as follows:
+
+```{r }
+treated$treated = "Treated"
+```
+
+Now lets add the same column to the control file, and create our outcomes data frame again.
+
+```{r }
+control$treated = "Control"
+outcomes <- rbind(treated, control)
+
+```
+
+We can check that our new data frame has the treated variable and that it looks correct:
+
+```{r }
+table(outcomes$treatment)
+```
+
+## Merging datasets
+
+Now we need to add columns to our data frame for the patient meta-data.  This is in the 'meta' sheet that we created earlier.  Note that the outcomes and meta data frames are linked by the patient id number, but the columns have different names in each sheet. We could rename the columns of meta as we did above, or we can tell the 'merge' function that we want to merge dataframes on a key that is named differently in each parent set.  The former approach seems better to me:
+
+```{r }
+names(meta)[1] <- "patid"
+alldata <- merge(outcomes, meta, by="patid", all=TRUE)
+```
+
+
+Next we'll go on to plotting and modelling with this dataset.
+
