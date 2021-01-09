@@ -5,6 +5,8 @@ output:
   html_document:
     df_print: paged
     theme: cosmo
+    toc: true
+    toc_depth: 1
 ---
 
 
@@ -12,7 +14,7 @@ output:
 ```{r echo=FALSE}
 exerciseNumber=0;
 exercise <- function(x="") {
-  exerciseNumber <<- exerciseNumber+1; return(sprintf("# Exercise %d. %s", exerciseNumber, x))
+  exerciseNumber <<- exerciseNumber+1; return(sprintf("## Exercise %d. %s", exerciseNumber, x))
   }
 sectionNumber=0;
 section <- function(x="") {
@@ -26,7 +28,7 @@ subsection <- function(x="") {
 
 exampleNumber=0;
 example <- function(x="") {
-  exampleNumber <<- exampleNumber+1; return(sprintf("# Worked Example %d. %s", exampleNumber, x))
+  exampleNumber <<- exampleNumber+1; return(sprintf("## Worked Example %d. %s", exampleNumber, x))
   }
 
 ```
@@ -40,13 +42,16 @@ Specifically this course will bring you up to the level you need to attend the e
 
 The data you need to complete the training exercises is in the accompanying file (Introstat.xlsx).  All of the commands for the worked examples and the exercises is in the file TutorialScript.R.  The commands for the worked examples are also typed out here.
 
+
 For those who have run through these notes already and completed the exercises there are some additional exercises that you can try to complete during the course.
 
 `r subsection("Learning objectives")` 
 
+We will focus on the tasks used in a typical analysis of a single scientific dataset, mirroring the tasks usually conducted in other statistical software.
+
 ### Specific tasks:
 
-Day 1:
+Day 1:  R and RStudio basics
 
 *	Making an Rstudio project
 *	Loading packages
@@ -54,14 +59,13 @@ Day 1:
 *	Exploring your data and calculating descriptive statistics
 *	Simple hypothesis tests
 
-Day 2:
+Day 2:  Linear models
 
-* Estimating and diagnosing a regression model
+* Estimating, diagnosing and reporting a regression model
 
-Day 3:
+Day 3:  Graphics
 
 * Making graphics using 'base' graphics and the ggplot2 package
-* Putting it all together
 
 ### How to use R
 
@@ -80,7 +84,7 @@ Day 3:
 * Representing and handling ‘missing’ values
 * The importance of ‘tidy’ data
 
-`r section("Introduction")` {#intro}
+`r section("Getting R and RStudio")` {#intro}
 
 ## What are R and RStudio?
 
@@ -108,7 +112,7 @@ On the left is the console window, where you type commands and see output.  The 
 
 ## Check R and RStudio are working, run your first command
 
-Click in the console window and type:
+4. Click in the console window and type:
 
 ```{r eval=FALSE, echo=TRUE}
 1+2
@@ -122,10 +126,10 @@ Press return on your keyboard.  You should see:
 
 This is the basic way in which R works.  We enter commands at the command prompt, and we get the output in the console window.
 
-
-`r exercise("More maths")`
-
-Try a few other mathematical functions at the R console.
+5. Try a few other mathematical functions at the R console.  Can you use R to find:
+    a. The natural logarithm of 10
+    b. The square root of 2
+    c. The cube root of 10
 
 `r section("Using projects and scripts")`
 
@@ -186,7 +190,7 @@ So far we have used R as a calculator.  Next we'll learn about how R stores and 
 
 Everything in R is done by executing ‘functions’.  When you typed `1+2` at the console above you were calling the `+` function, with `1` and `2` as its arguments, and the result was printed in the console window.
 
-Functions are more commonly called by their *name*, with their *arguments* in brackets, separated by commas.  For example, to get say the logarithm (base 10) of 100, we would type
+Simple mathetical functions can be written using standard notation in this way (eg `1+2` or `3/4`) but functions are more commonly called by their *name*, with their *arguments* in brackets, separated by commas.  For example, to get say the logarithm (base 10) of 100, we would type
 
 ```{r }
 ### Try this directly in the console, and by running it from your new script.
@@ -226,15 +230,15 @@ You might find it easier to understand:
 x <- 1+2
 ```
 
-This does exactly the same thing; some R users use `<-` instead of `=` for assignment (for historical reasons), so both forms will come up when you’re looking at help or other people’s code.  I tend to use either interchangably.
+This does exactly the same thing; some R users use `<-` instead of `=` for assignment, so both forms will come up when you’re looking at help or other people’s code.  I tend to use either interchangably.
 
-So now you have an object called `x` in your *environment* that holds the number 3.  You can ask R to display the value of ‘x’ by just entering x (just entering the name of an object prints that object):
+So now you have an object called `x` in your *environment* that holds the number 3.  You can ask R to display the value of ‘x’ by just entering x (just entering the name of an object *prints* that object):
 
 ```{r }
 x
 ```
 
-Or do something else with x
+Or you could do something else with x
 
 ```{r }
 x*2
@@ -256,16 +260,16 @@ Objects of different classes store different kinds of information.  We will come
 2.	Now change the value of x (eg using  x <- 6 ).  Does the value of y change?
 3.	Objects can hold text strings instead of numbers.  Try:
 
-```{r }
+```{r eval=FALSE}
 myname <- "George"  #(or whatever your name is).
 myname
 ```
 
 What is the class of the ‘myname’ object?
 
-4.	(difficult)  Look up the function to turn a text string into upper case (an internet search will help you).  Use this function to make a new object which has the same text as ‘myname’ but in upper case.
+4.	(Difficult!)  Look up the function to turn a text string into upper case (an internet search will help you).  Use this function to make a new object which has the same text as ‘myname’ but in upper case.
 
-`r section("Classes and types")`
+`r section("Types of data")`
 
 We saw two object of two different 'classes' in the previous exercise. These classes were 'numeric' and 'character'.  The class of an object defines what kind of information it hold, and how other functions act on it.
 
@@ -275,6 +279,10 @@ There are four basic classes that you will commonly use and should be aware of. 
 *	'logical' – can only take the values (TRUE or FALSE)
 *	'character' – for strings of text
 *	'factor' – for labelled categorical variables (ordered or unordered)
+
+You might also commonly come across objects of class:
+
+* 'Date' - which is really just a number but formatted to represent a single date and time. R has a lot of useful functions for working with dates so if you have a dataset that includes dates it is worth exploring this.
 
 Later in this tutorial we will see objects of class:
 
@@ -287,6 +295,7 @@ Character strings represent text rather than numbers.  Strings are used to label
 
 Strings are identified in R (and in most other programming languages) by enclosing them in quotes.  Single quotes and double quotes can be used (and are treated almost identically), but double quotes are preferred.  For example try:
 
+
 ```{r eval=F}
 print("Hello")
 
@@ -298,9 +307,19 @@ print(Hello)
 
 A common mistake in R is to forget to enclose strings in quotes.  In which case R tries to interpret your input as an object name, leading to an error message if that name doesn’t exist.
 
+## Logicals
+
+Logicals represent binary information in the form `TRUE` or `FALSE`.  They most often arise as the result of a comparison, for example try:
+
+```{r eval=FALSE}
+3>2
+
+"Hello" == "hello"  # note the double equals sign, this distinguishes assignment from comparison
+
+```
 
 
-`r section("Vectors")`
+`r section("Working with Vectors")`
 
 So now we know how to store individual values, but our datasets are obviously much more complex than this.  The next building block is the 'vector' which is like a single column of values in a database, all of the same type.  We'll soon get on to assembling these into 'data.frames' to represent entire datasets, but here we'll focus on how vectors themselves work.
 
@@ -356,7 +375,9 @@ For other functions, like `mean()` and `sum()` a single number was returned base
 
 The elements of a vector must all be the same primitive type (that is, they must be all numerics, all character strings, all logicals or all factors)
 
-So what happens when you try these commands?
+`r exercise("Working with vectors")`
+
+What happens when you try each of these commands?   Can you explain why?
 
 ```{r eval=F}
 
@@ -366,12 +387,17 @@ vectorc <- c(1, TRUE)
 
 mean(c(2,4,6))
 
+"Kate" %in% vectora
+
+"George" %in% vectorb
+
+vectorb == "George"
 
 mean(vectorb)
 
 ```
 
-## Accessors
+## Accessors and subsetting
 
 Accessors allow you to access or change individual elements of a vector.  For example, you can ‘subset’ one or more elements of a vector using the `[` operator as follows.
 
@@ -451,7 +477,7 @@ sum(is.na(myvector)) # can you explain what this does?
 
 5. Now plot a histogram only of the values that are greater than 0.
 
-`r section("Working with data frames")` 
+`r section("Working with datasets")` 
 
 In this section we'll start working with data frames.  Data frames are the objects that R uses to store datasets for analysis.  You can think of a dataframe as a set of vectors all of the same length, with each vector representing a variable.  In the lecture we will discuss data frames and how to make sure your data can be represented in one or more data frames.
 
@@ -570,14 +596,14 @@ Note that the class for each variable is listed by each column name in the Envir
 
 This is the same output that you would get from the `str()` function.
 
-`r exercise("Vector and data frames")`
+`r exercise("Vectors and data frames")`
 
 1. What are the names of the vectors that comprise the TreeData dataframe?
 2. What is the class of each?
 
 A corollary of the fact that all elements of a vector must have the same class is that all the values in a single column of a dataset must have the same class.  That is, you cannot have a column in your dataset that includes the numeric value `3` and the character value `Green`.  This information would need to be stored in a different way.
 
-`r example("Accessing variables and summary statistics")`
+`r section("Making summary statistics")`
 
 A data frame is essentially a set of vectors, all of the same length, that have been stuck together into a rectangle such that each row describes unit of one observation, and each column includes a particular attribute of that observation.
 
@@ -607,7 +633,7 @@ boxplot(TreeData$height)
 
 This can be a useful way to summarise individual variables, although as a summary table it's very  limited!  Often we want to be able to summarise according to the levels of another factor.
 
-(Here we will just discuss summarising a single variable by a single stratifying variable.  In a separate vignette I discussion options for creating summary tables of statistics.)
+(Here we will just discuss summarising a single variable by a single stratifying variable.  In a separate handout I discuss options for creating bigger summary tables of statistics.)
 
 We will look at how to summarise a continuous 
 
@@ -619,7 +645,9 @@ Let’s get the heights by species.  We can do this using the ‘aggregate’ fu
 aggregate( height ~ species.name, FUN=mean, data = TreeData, )
 ```
 
-Look at the help file for `aggregate()` to understand how the arguments are specified.
+Look at the help file for `aggregate()` to understand how the arguments are specified.  
+
+Note from the help file there are two 
 
 Here `aggregate()` uses the 'formula' interface.  It's important to understand this now because this is how variables are specified in many different R functions, eg to run analyses and make graphics.  Formulas are generally used in R to specify relationships between variables in a dataset.  Different functions use forumulas in different ways, but in general the left hand side of a formula represents one or more dependent variables, and the right hand represents variables that act as predictors or grouping variables.
 
@@ -674,7 +702,11 @@ Can you use prop.table() to generate column percentages instead of row percentag
 Further reading on the ‘extract’ operators: https://github.com/lgreski/datasciencectacontent/blob/master/markdown/rprog-extractOperator.md
 
 
+`r section("Basic plots and hypothesis tests")`
+
+
 `r example("Making basic plots")`
+
 We’ve already seen the box plot in the previous section.  We can ask for this in a slightly different way, and stratify it by species:
 
 ```{r }
@@ -683,12 +715,14 @@ boxplot(height ~ species.name, data=TreeData)
 
 We’ll make some improvements to this box plot when we discuss graphics.
 
-`r example("SIMPLE HYPOTHESIS TESTS AND ESTIMATION")`
+`r example("Hypothesis tests")`
 
 Is height associated on tree health?  We can generate a simple box plot as previously to examine this this time with some labels):
 
 ```{r }
-boxplot( height ~ health, data=TreeData , xlab="Height", ylab="Health")
+boxplot( height ~ health, data=TreeData , 
+         xlab="Height", ylab="Health",
+         col="red") # Note the use of a multi-line command in a script!
 ```
 
 It looks like the two variables might be related,  but we would like to perform a t-test to see if the difference is statistically significant, and to get an estimate (with confidence interval) for the difference.
@@ -709,155 +743,12 @@ Exercise:  How would you run a paired t-test?  (No need to do it as we don’t h
 
 
 
-`r example("Transformations")`
-
-Just as we can apply mathematical functions to objects representing single numbers and vectors, we can apply them to columns in our data frame to transform or combine variables.
-
-For example, suppose we want to log transform the height variable, and create a new variable called logHeight.  Then we would use:
-
-```{r }
-TreeData$logHeight <- log(TreeData$height)
-```
-
-As when dealing with vectors above, R will apply the function individually to each element of the column, creatig a new variable in our data.
-
-Check that this variable has been created.
-
-Now we can plot the new variable against dgl:
-```{r }
-plot( logHeight ~ dgl, data = TreeData)
-```
-
-
-
-
-`r example("Linear regression")`
-
-In the previous section we saw that dgl could be used to predict tree height.  We can estimate a linear model for this relationship using the lm() function
-
-```{r }
-lm1 <-  lm( height ~ dgl, data=TreeData  )
-```
-
-Note this function uses the same 'formula' interface as the t-test, boxplot functions above.
-
-`lm()` creates a ‘linear model’ object.  The linear model object contains the all the details of an estimated linear regression model with ‘height’ as the outcome and ‘dgl’ as the predictor.
-
-There are now lots of different functions you can use to extract elements of this model.
-To see a description of all the information contained within the object, use:
-
-```{r }
-attributes(lm1)
-```
-
-But generally you won’t need to use these attributes directly.  Different functions exist to extract the information in readable and usable formats:
-
-The summary command that we used earlier can also ‘summarise’ a linear model.  It produces the standard linear regression output that you would expect from any statistics package.
-
-```{r }
-summary(lm1)
-```
-
-To get the corresponding analysis of variance table, use the anova() function:
-
-```{r }
-anova(lm1) # Note by default R returns ‘type III’ ANOVA.
-```
-
-To plot the data with the regression model added, use the ‘plot’ function as previously, then abline() to add the line:
-
-```{r }
-plot( height ~ dgl, data = TreeData)
-abline(lm1, col="red")
-```
-
-
-`r example("REGRESSION PREDICTIONS AND DIAGNOSTICS, working with CATEGORICAL VARIABLES (FACTORS)")`
-
-After estimating a regression model we should inspect it to check its underlying assumptions are met.   R will show you some useful diagnostic plots if you run:
-
-```{r }
-plot(lm1)
-```
-
-If we want to directly check the predicted values or residuals from the model we can use the predict and resid functions
-
-```{ r}
-predict(lm1)
-resid(lm1)
-```
-
-These functions generate vectors with each element corresponding to a row in the original data frame.  So element [1] of the vector created by predict() is the predicted (fitted) value of height for the first row in TreeData under our model.
-
-`r example("Using factors to represent categorical variables")`
-
-So far we have not considered how R represents categorial variables.  R has a special type called a 'factor' whereby categories are represented by integers corresponding to groups, with each integer given a text label.  We'll illustrate their use with a simple example:
-
-## A model with a categorical predictor
-
-Suppose we wanted to model the relationship between tree height and species.  'Species' is a categorical variable, rather than a continuous numeric as dgl was, but the way in which we estimate the model in R is the same. That is, we do this by running:
-
-```{r }
-lm2 <-  lm( height ~ species.name, data=TreeData  )
-summary(lm2)
-```
-
-Notice that we did not need to create any 'dummy' variables to indicate the different levels, R did this automatically, and chose the level with the lowest value (alphabetically) to be the reference value. 
-
-Because the species.name variable was a ‘character’ variable, R understood that we wanted it to be analysed in categories (just as it did when we estimated the box plots).
-
-Much of the time, if we try to use a character variable in an analysis, R will interpret this as a factor.
-
-If we had used the numeric species number variable, then R would not have automatically realised this, and we would get a non-sensical regression.
-
-```{r }
-lm3 <-  lm( height ~ species, data=TreeData  )
-summary(lm3)
-```
-
-To make R treat a numeric variable as categorical it needs to be turned into a ‘factor’ variable.  A factor is a numeric variable where the numbers just represent groups, they lose their meaning as numbers.
-
-Rather than overwriting the species numeric variable, we’ll create a new one for the factor:
-
-First we’ll check the class of TreeData$species and ask for a summary:
-
-```{r }
-class(TreeData$species)
-summary(TreeData$species)
-```
-
-We see a summary that is suitable for a continuous numeric (mean, median etc)
-
-Now make a new factor variable and add it to the dataframe:
-
-```{r }
-TreeData$speciesF <- factor(TreeData$species)
-```
-
-Now check the class and the summary again.  R realises that a factor should be summarised by a tabulation not mean, median etc.
-
-```{r }
-class(TreeData$speciesF)
-summary(TreeData$speciesF)
-```
-
-Finally the regression model should look sensible again, that is with one row per category (compared to a reference group).
-
-```{r }
-lm4 <- lm( height ~ speciesF, data=TreeData  )
-summary(lm4)
-```
-
-Exercise
-a)	Are the regression coefficients the same as those estimated for model 2?  If not, why not?
-b)	The function `tbl_regression()` in the `gtsummary` package provides nicely laid out summaries of regression models.  Give it a try.
-
-
-ANSWERS AND COMMENT ON EXERCISES
+# Answers and comment on the exercises
 1a.:  Type y = x+3 or y <- x+3
 1b.:  Subsequently changing x doesn’t change the value of y.  When y was created it used only the value of x at that time, and changing x afterwards doesn’t change y.
 2:  No clues with this one, but the final answer should be 1.
 5:  You could multiply the table of proportions by 100, either before or after you round it to 2 d.p.  Compare:
+
 > 100*round(proptab1, digits=2)
 
 > round(100*proptab1, digits=2)
