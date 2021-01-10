@@ -48,7 +48,7 @@ Specific learning objectives are
 
 Tomorrow we'll get to the fun stuff - graphics with ggplot!
 
-## Walking speed data
+`r section("Stroke rehabilitation study")`
 
 Here we will use R to answer some research questions arising from a real study.
 
@@ -70,7 +70,168 @@ Our research questions are:
 
 First we should inspect the data that we have.  It has been supplied to us as an Excel sheet.
 
-First we'll load the data from the excel sheet, and explore it using summary statitics and graphics.
+`r exercise("Tidy data")`
+
+1. How should the walking speed data look in 'tidy' format?
+2. Can you create this in Excel?
+
+`r section("Making the data 'tidy' in R")`
+
+In this case we might find it easier to create our dataset in the right format before we import it into R.
+
+But for more complex or larger datasets, or if we might have to repeat this operation, it might be better to do it in code.
+
+We have our data in three separate sheets, and we need to end up with a single dataframe that allows us to answer our questions by expression relationships using the formula syntax.
+
+That is, if we want to find how  be able to say something like:
+
+`speed ~ treatment + age + sex + department`
+
+so we need to set up our dataset to facilitate this.
+
+## Step 1.  Appending datasets
+
+Base R has the function `rbind()` to combine datafraes rowwise into a new longer dataframe.  But as with many 'data wrangling' problems, the tidyverse function `bind_rows()`is better.
+
+Tidyverse is made of lots of different packages, we have already seen `readxl` in day 1, today we will use the `dplyr` package.
+
+`r exercise("Installing a package")`
+
+
+1. Check whether you have `dplyr` already installed, and install it if you do not.
+2. Start a new script which will include all the command for creating the 'combined' dataset.
+2. Load the `dplry` library, and look at the help for `bind_rows()`
+3. Add the `readxl` commands to read the treatment and control data into two separate data frames.
+4. (if you get time) Now use `bind_rows()` to turn them into a single dataframe.
+
+
+`r example("Using bind_rows() ")`
+
+If you didn't already do it as part of the exercise, load the control and treatment data into R from the Excel sheet.
+
+```{r }
+library(readxl) 
+treated <- read_excel(path="day 2/walkingspeed.xlsx", sheet="treated")
+control <- read_excel(path="day 2/walkingspeed.xlsx", sheet="control")
+```
+
+`r exercise("Type trouble")` 
+
+1. What are the classes of each of the vectors in the `treated` and `control` data frames.  
+2. Why has this happened?  
+3. Is this a problem?  How should we fix it?
+
+Now if we use `bind_rows()` on these datasets, we see the following:
+
+```{r }
+library(dplyr) 
+combined <- bind_rows(treated, control)
+head(combined)
+```
+
+
+We have two different columns for time!  This is because `bind_rows` tries to match the columns by name, and the `time` columns had different names in our dataset.  So we need to fix the names in our data frames to be the same before we bind them:
+
+We can get or set the column names of a data frame with the `names()` function.
+
+So here we will use:
+
+```{r }
+names(control) <- names(treated) # can you explain what this does?
+```
+
+Now what happens if you try to bind the rows?
+
+```{r error=TRUE}
+combined <- bind_rows(treated, control) # can you explain what this does?
+```
+
+If you didn't fix the type of the walking  earlier, `bind_rows()` will fail because in one dataset `time` is a character vector, and in the other it is a numeric vector.
+
+Since we are going to be doing a statistical analysis on this variable, we need it to be a numeric.  Recall that we can convert a character to a numeric with `as.numeric()`
+
+The same function will work for a vector that is part of a dataframe:
+
+```{r }
+treated$time <- as.numeric(treated$time)
+```
+
+Note the warning here, R is telling us that there was a non-numeric character, and that it has been converted to missing.  We should check the original data to see if this is acceptable to us.
+
+Now we can bind the rows of the dataset together:
+
+```{r }
+combined <- bind_rows(treated, control) # can you explain what this does?
+head(combined)
+```
+
+This is fine, but now we don't know which data point came from which group.  Fortunately, `bind_rows()` has another argument that adds a column to the new dataset indicating which row it came from.
+
+`r exercise("Adding an group column")`
+
+1. Check the help for `bind_rows()` to find out how to add the grouping column.
+2. Try it!  Call the new column `group` or something like that.
+
+```{r echo=FALSE}
+# can you explain what this does?
+combined <- bind_rows(treat=treated, control=control, .id = "group") 
+```
+
+`r section("Merging datasets")`
+
+So now we have a combined dataset including all of our outcome data and a grouping variable.
+
+To complete our analysis we need the patient meta-data to also be included in this data frame.  Since the data are linked by an ID variable, we will use the `merge()` function to add this information:
+
+First, we'll read the meta-data into a new data frame.  Then we'll merge the two together using the `merge()` function.  `by.x` and `by.y` tell `merge()` which variables are the ID variables in the first and second datasets respectively.  I hope this is self-explanatory, check the documentation if it is not!
+
+```{r }
+meta <- read_excel(path="day 2/walkingspeed.xlsx", sheet="meta")
+merged <- merge(combined, meta, by.x = "patid", by.y = "patient")
+head(merged)
+```
+
+So now we have a single dataframe in tidy format with everything we need to conduct our analysis!
+
+Note that each row contains everything we need to know about each unit of observation, and each column corresponds to a specific variable.
+
+This was a fairly simple example of data wrangling, but is fairly typical of the process I need to go through when I get a new dataset before I can start working on it.  
+
+Be prepared to spend some time figuring out how to do this with your data, and learning the relevent functions from the `dplry`, `tidyr` and other `tidyverse` libraries.   Also, when you are designing your data collection process be aware of how your data ultimately needs to be used, and design your spreadsheets or other data entry systems accordingly.
+
+`r section("Exploratory analysis")`
+
+Now we have our data in R, the first thing we should do is an exploratory analysis.  The aims here are to:
+
+1. Check that the data all looks OK
+2. Think about how our formal analysis might work (eg parametric or non-parametric analysis)
+
+The main tools we have for exploratory analysis are graphs and descriptive statistics.  We should also consider the pattern of missing data to see if this tells us anything important.
+
+For my exploratory plots I'll use base graphics.  Later when we are making our report graphics we'll use `ggplot`. 
+
+For a first plot, seeing all the data points is important:
+
+```{r }
+plot(time~age, data=merged)
+boxplot(time~sex, data=merged)
+```
+
+What do we learn from these plots?
+
+Do the big outlier look reasonable (given what we know about the experiment?)
+
+What are our options for dealing with it?
+
+`r section("Outliers and transformations")`
+
+A transformation is often a good option for dealing with outliers or non-normal distributions.
+
+```{r }
+plot(time~age, log="y",data=merged)
+```
+
+Now we can see an unreasonably high value, and an unreasonably low one!  We also see that the data is quite neatly normal 
 
 ```{r }
 library(readxl)
