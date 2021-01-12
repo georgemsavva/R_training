@@ -1,0 +1,184 @@
+---
+title: "Using data.table, gt_summary, and table1 to create tables of summary statistics"
+author: "George Savva"
+date: "06/01/2021"
+output: 
+  html_document:
+    theme: cosmo
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Making tables of descriptive statistics (typically the 'table 1' in your paper) is an important aspects of your data analysis and reporting.  
+
+Unfortunately R does not provide a natural way to produce tables of descriptive statistics.  We can use base functions `aggregate()` and `table()` to produce means over groups or contingency tables, and this may be enough for you to buid your own tables, but these are not very flexible or attractive, and leave you a lot of work to do in collating the information that you need.
+
+Many (many!) packages have been developed by others to fill this gap, in this short vignette I will look at three options for making tables of summary statistics in R.
+
+See here for a discussion of nine different packages to create descriptive tables: (https://thatdatatho.com/2018/08/20/easily-create-descriptive-summary-statistic-tables-r-studio/)
+
+We will use the tree data that you have already seen in the course, and will produce a neat table of the mean and standard deviation of tree height, and the proportion of healthy trees, stratified by species.
+
+First we'll load the data:
+
+```{r warning=FALSE}
+library(readxl)
+TreeData <- read_excel(path="introstat.xlsx", sheet="P1-TreeSpeciesData", .name_repair = "universal")
+```
+
+
+# Using the data.table package
+
+data.table is an R package designed to make working with data frames easier.
+
+Its central function is an extension of the standard subsetting function `[`.  This takes three aguments (instead of the usual two), that correspond to 
+
+1. The rows we want to use
+2. The calculations to perform
+3. How to group the rows
+
+Making a table of descriptives using this function is easiest illustrated using a simple example.   
+
+First we need to load the package, then make our `data.frame` into a `data.table` with the `setDT` function:
+
+```{r warning=FALSE}
+library(data.table)
+TreeData <- read_excel(path="introstat.xlsx", sheet="P1-TreeSpeciesData", .name_repair = "universal")
+TreeDataDT <- setDT(TreeData)
+class(TreeDataDT)
+```
+
+
+First we need to convert our data frame into a data.table object:
+
+```{r }
+TreeDataDT <- setDT(TreeData)
+```
+
+
+To get the mean tree height over species, including all rows in our dataset we would run:
+
+```{r }
+TreeDataDT[,                # nothing here means select all rows
+           mean(height),    # calculate the mean of 'height'
+           species.name     # stratify by species.name
+           ]
+```
+
+We can add a second column for standard deviation, by using a `list` for the second argument:
+
+```{r }
+class(TreeDataDT)
+TreeDataDT[,                # select all rows
+           list( mean(height), 
+                 sd(height)),    # calculate the mean and sd of 'height'
+           species.name     # stratify by species.name
+           ]
+```
+
+Now we can give each column a nice name:
+
+```{r }
+TreeDataDT[,                # select all rows
+           list( `Mean Height`=mean(height), 
+                 `SD` = sd(height)),    # calculate the mean and sd of 'height'
+           list(`Species` = species.name)     # stratify by species.name
+           ]
+```
+
+And finally add the proportion of healthy trees:
+
+```{r }
+TreeDataDT[,
+           list( `Mean Height`=mean(height), 
+                 `SD` = sd(height),
+                 `% healthy` = 100*mean(health=="Y")),
+           list(`Species` = species.name)
+           ]
+```
+
+Now we'd like to round all the numeric values to 1dp:
+
+```{r }
+TreeDataDT[,                # select all rows
+           list( `Mean Height`=round(mean(height),1), 
+                 `SD` = round(sd(height),1),
+                 `% healthy` = round(100*mean(health=="Y"),1)
+               ),    # calculate the mean and sd of 'height'
+           list(`Species` = species.name)     # stratify by species.name
+           ]
+```
+
+
+This is nice as it results in another data frame (or data table) that we can use for plotting or further analysis, or can pass to another function to create a neat output.
+
+Or since we can use any R function within this function we can organise our mean and sd for a more aesthetic or compact table.
+
+```{r }
+dt1 <- TreeDataDT[,list( `Mean height (sd)`= sprintf("%0.1f (%0.1f)", mean(height),sd(height)), 
+                 `% healthy` = round(100*mean(health=="Y"),1)),   
+            list(`Species` = species.name)]
+dt1
+```
+
+We could use `kable` to make a pretty version of our table for a report:
+
+```{r warning=FALSE}
+library(kableExtra)
+library(knitr)
+
+kable_styling(kable(dt1 ))
+```
+
+
+
+
+# Using `table1`
+
+Table 1 is a package specifically designed to produce tables of descriptives.  It creates pre-formatted tables in html format that can be included directly into papers.
+
+We can set the variables we want to describe and the variable to stratify over using the formula interface as follows:
+
+```{r warning=FALSE, message=FALSE}
+library(table1)
+
+table1(~ height + health | species.name , data=TreeData )
+
+```
+
+Now we need to specify that we want only the mean and sd for the height variable, and only the proportion healthy from the health variable:
+
+[To be added]
+
+This table is good to be directly pasted into a report.  See the table1 package ‘vignette’ to learn more about how this works and how to change the output if you need to.
+
+https://cran.r-project.org/web/packages/table1/vignettes/table1-examples.html
+
+
+# Using gtsummary
+
+`gtsummary` is the newest package I will use, and builds on the new `gt` system for formatting tables.
+
+The main function to produce a descriptive table is `tbl_summary()`:
+
+```{r }
+library(gtsummary)
+tbl_summary(TreeData)
+```
+
+
+Now we can subset the data to select which variables to include, and use the `by`, `label` and `statistic` functions to specify which statistics to produce, how to stratify the data and how to label the columns:
+
+```{r }
+tbl_summary(TreeData[,c("species.name","height", "health")], 
+                    by=species.name,
+                    label=list(species.name ~ "Species", height  ~ "Height (m)", health ~ "Health"),
+                    statistic=list(height~"{mean} ({sd})"))
+```
+
+This is an extremely rich and flexible package, see the vignette for more details:
+
+http://www.danieldsjoberg.com/gtsummary/articles/tbl_summary.html
+
