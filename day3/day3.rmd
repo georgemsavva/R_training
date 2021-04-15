@@ -1,0 +1,160 @@
+---
+title: "Plotting data using R"
+author: "George Savva"
+date: "13/04/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+Plotting data is an essential part of data analysis and reporting.  Your plots communicate your results, and a good plot can be the difference between a successful and unsuccessful communication.
+
+In this session we'll think about how to plot your data, what makes a good vs a bad plot, and illustrate some concepts for plotting using R.
+
+Learning objectives
+
+What to plot
+A few principles for designing a good graph
+Plotting in R
+
+## What to plot
+
+While a good picture can be worth a thousand words, a bad picture can be worth none, or even do more harm than good.
+
+Your data is likely to be complex, and you will have limited space for plotting in your reports, and so you should think carefully about which plots are important and how to choose to display your data.  
+
+Generally there are two reasons to plot data, that mirror the two main types of statistical analyses we can perform.  The first is to describe data (mirroring our descriptive analyses), the second is to describe results that come from the data (mirroring our inferential analyses).  Often we are forced to meet these two objectives in the same graph, which can cause some tension!
+
+## Walking speed data
+
+Lets see an example.  Consider our walking speed data.  What would be the purpose of plotting data?  Also consider who is the audience for each of these aspects.
+
+* Describe dataset
+** Distribution of data
+** Describe population
+** Find outliers or other problems
+** Preliminary comparison of means
+** Choose a statistical method
+
+* Describe results
+** For ourselves
+** Validate a statistical model
+** For scientific publications and presentations:
+** Show effect size
+** Show confidence in effect size
+** Show statistical significance
+** Public communication of findings
+
+These aspects might all need kinds of different plots at different stages of the project.
+
+Each plot we produce needs to meet its own need.  We should think about what we want to see, and then work out how to get it.
+
+### Descriptive plots
+
+Before we model data we should visualise it.  This crucial first step is often omitted in analyses and reports.  Consider the follow example, that I have designed after a real analysis I worked on earlier this year, where an outcome was compared between two treatment conditions:
+
+```{r }
+library(ggplot2)
+set.seed(12345)
+N=12
+y <- c(runif(N), c(runif(N-2), 4.5,6))
+x <- factor(rep(c(1,2), each=N))
+ggplot(data.frame(Group=x,y), aes(x,y)) + 
+  stat_summary(geom="col",width=0.5, fill="red") + 
+  stat_summary(geom="errorbar", width=0.2) + 
+  theme_bw()
+```
+
+On the face of it, it looks like the outcome is higher in group 2 than group 1.  If this is all you see then this is surely the conclusion you would come to.
+
+But how well do you feel like you understand the data from this graph?
+
+Consider now how you would interpret this:
+
+```{r }
+library(ggplot2)
+ggplot(data.frame(Group=x,y), aes(x,y)) + 
+  geom_point() + 
+  theme_bw()
+```
+
+Quite differently?  At least with this second visualisation we can see the data and draw our conclusions about what is going on directly.
+
+Also consider, the first graph only shows you four values, two means and two standard errors (if that is what they are, I never actually told you).  It's a complete waste of ink.  But how often do you see this first presentation in the scientific papers your read?  When I see one of these I can't help but wonder what horrors it is hiding.
+
+The second graph tells us quite a lot.  It tells us to maybe check our outlying data points, or to try transforming our data before analysis. We might even that the two groups are more-or-less the same, except for two individuals, which may well be a real effect of treatment that is limited to specific individuals.  In any case we learn a lot.
+
+So our first rule is simple: always plot your data, and not summaries of the data.
+
+Ideally, if we have a dataset with several variables, we will make something like a graph matrix showing every variable against every other variable.  This will help us identify any potential problems or outliers in 2-dimensions.
+
+The `ggpairs` function in the `GGally` package gives us a grid layout showing all of these combinations.  I think its a reasonable summary.  
+
+
+
+```{r message=FALSE}
+library(readxl)
+library(GGally)
+walkingdata <- read_excel(path="walkingspeed.xlsx", sheet="fixed")
+ggpairs(walkingdata, columns=1:5)
+```
+
+Note I'm not wasting a lot of time making this graph pretty.  It's for me only, I don't care what it looks like, I just want to see the data as quickly and as effectively as possible.  I've also left patient ID in here as a variable, there's no harm doing this, and it might show me if any data errors have occurred.
+
+Does this graph meet all of the objectives that we set out for our 'descriptive' analyses above?
+
+### Inferential graphs
+
+While the descriptive graphs tells us about the data, it doesn't tell us anything useful about the comparison we are interested in making.
+
+To think about how we could graph that, first think about what exactly it is we are trying to show.
+
+Lets go back to our linear model from last time:
+
+```{r }
+model1 <- lm(data=walkingdata, log(time) ~ treated + sex + department)
+summary(model1)
+```
+
+What is the key information here that we need to communicate?
+
+I think its the estimate of treatment effect, the standard error of treatment effect, and potentially the p-value and a confidence interval for the difference.
+
+I do not think the mean time in either group is particularly interesting, nor do I think the standard error within each group tells me anything useful.
+
+So - do I even need a graph?  Should this summary statistic, mean difference = 0.19 (standard error=0.06; p=0.0015) be enough?  I think so, if combined with a visual summary that persuades us that the model is reasonable, and shows us this difference in the context of the variance in the data.
+
+```{r }
+library(emmeans)
+plot(emmeans(model1, trt~treated))
+```
+
+```{r }
+library(ggbeeswarm)
+ggplot(remove_missing(walkingdata), aes(treated,time)) + geom_point() + scale_y_log10() + 
+  geom_beeswarm() + facet_wrap(~sex)
+```
+
+
+This is amazing
+
+https://twitter.com/jomcinerney/status/1380987741001900033 
+https://twitter.com/juliustroeger/status/1380134627784986625 
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
