@@ -1,0 +1,781 @@
+---
+title: "Introduction to R day 2:  Tidy data and regression models"
+author: "George Savva"
+date: "07/01/2021"
+output:
+  html_document:
+    df_print: paged
+    theme: cosmo
+    toc: true
+    toc_depth: 1
+---
+
+
+
+```{r echo=FALSE}
+exerciseNumber=0;
+exercise <- function(x="") {
+  exerciseNumber <<- exerciseNumber+1; return(sprintf("## Exercise %d. %s", exerciseNumber, x))
+  }
+sectionNumber=0;
+section <- function(x="") {
+  sectionNumber <<- sectionNumber+1; return(sprintf("# **Section %d. %s**", sectionNumber, x))
+  }
+
+subsection <- function(x="") {
+  return(sprintf("## %s", x))
+  }
+
+
+exampleNumber=0;
+example <- function(x="") {
+  exampleNumber <<- exampleNumber+1; return(sprintf("## Worked Example %d. %s", exampleNumber, x))
+  }
+
+```
+
+
+`r section("Day 2 Introduction")`
+
+On day 1 we saw the basics of how R works, and introduced you to some basic graphics, tests and descriptive statistics.
+
+In this session we will get more practical, dealing with datasets, estimating and reporting linear models.
+
+Specific learning objectives are
+
+1. Tidy data
+2. Data wrangling
+3. Estimating and diagnosing a linear model
+
+`r section("The what and why of linear models")`
+
+There are many different ways to analyse data, but here I will restrict discussion to linear models.  This is because linear models turn out to be the foundation of almost all modern inferential statistics.
+
+Almost every analysis we do can be framed as a linear model (or something extension of it) and the way the `lm` function is used in R extends to most other analyses.  So learning how to develope, estimate, diagnose and report linear models is an essential aspect of doing modern computational statistics.
+
+A linear model describes the relationship between variables in your experiment.  One (or sometimes more) variable is characterised as the *dependent* variable (sometimes called the outcome variable), and others are identified as possible predictors of that variable (sometimes called 'independent' variables).
+
+In the simplest case, we have one outcome, $Y$ and one predictor, $Y$.  The linear model is then:
+
+\[Y_i = a + b\times X_i + \epsilon_i
+\]
+
+with 
+\[\epsilon_i\sim N(0,\sigma^2)\]
+
+This means, for any individual observation, the outcome is related to the straight predictor by the equation for a straight line $y=a+bx$ plus this extra component $\epsilon_i$.  This extra bit is called the $error term$ and accounts for the fact that our observations are unlikely to fall exactly on a straight line.  We assume these errors are normally distributed with mean 0 and variance $\sigma^2$.
+
+It's easy to visualise this on a graph:
+
+```{r }
+library(ggplot2)
+x <- 1:10
+y <- 2*x + 3 + rnorm(length(x))
+ey <- 2*x + 3
+ggplot(data.frame(ey,y,x), aes(y=y,x=x)) + geom_line(aes(y=ey)) + geom_point() + geom_segment(aes(xend=x,yend=ey))
+abline(3,2)
+```
+
+While this might appear to only apply to a particular sort of dataset with continuous predictors and outcomes where a straight line is a good representation of the relationship, it is very easily extended to other situations that we often care about.  For example, if $x$ happened to be a binary variable, then the same equation gives us:
+
+```{r }
+x <- rep(c(0,1),each=5)
+xp <- x + rep(seq(-.2,.2,l=5),2)
+y <- 2*x + 3 + rnorm(length(x))
+ey <- 2*x + 3
+ggplot(data.frame(ey,y,xp,x=factor(x)), aes(y=y,x=xp)) + 
+  geom_line(aes(y=ey), group=x) + 
+  geom_point() + geom_segment(aes(xend=xp,yend=ey)) + scale_x_continuous(limits=c(-.5,1.5), breaks=c(0,1))
+```
+Then the $b$ is the difference between the two groups, and $\epsilon$'s are the within groups deviations.  The conventional statistical test for the difference between the two groups, the unpaired t-test, is then equivalent to asking the question "is the $b$ parameter in the model significantly different from zero?".
+
+Note that the assumptions of the t-test also follow immediately from this model.  Note the model assumes the error terms $\epsilon_i$ are normally distributed, each comes from the same distribution, and that each error is independent of the others.  This exactly corresponds to the assumptions underlying the t-test, that is equal variance in each group, normally distributed points within groups and independence of observations.
+
+The extension to one-way ANOVA is also straightforward.  If our predictor is a categorical variable with $m$ levels, then the equation can be written:
+
+\[Y_i = a +  b_2X_{i2} + \dots +  b_mX_{im+}\epsilon_i
+\]
+
+Where $X_{ij}$ equals 1 if observation $i$ in in group $j$, and is zero otherwise.  Again, this might be more easily seen graphically.
+
+```{r }
+x <- rep(c(0:3),each=5)
+effects <- rnorm(4)
+effects[1] <-0
+xp <- x + rep(seq(-.2,.2,l=5),4)
+ey <- 3 + effects[x+1] 
+y <-  ey + rnorm(length(ey))
+
+ggplot(data.frame(ey,y,xp,x=factor(x)), aes(y=y,x=xp)) + 
+  geom_line(aes(y=ey), group=x) + 
+  geom_point() + geom_segment(aes(xend=xp,yend=ey)) + scale_x_continuous(limits=c(-.5,3.5), breaks=c(0,1,2,3))
+```
+
+The traditional one-way ANOVA test is then equivalent to asking "are any of the $b_j$ significantly different from zero?", and testin the pairwise comparisons between groups are just the differences between the $b$'s.  Again we have the same assumptions; identically normally distributed errors (so equal variances across groups) and independence of observations.
+
+So now rather than needing to learn three statistical procedures, (linear regression/correlation, t-tests and one-way ANOVA) we only need to learn one (how to fit a linear model).  All of the interpretation and assumptions (and how to check them) follow naturally from this.
+
+I'll leave it there, but several others have written more comprehensively on understanding that almost every statistical analysis can be conceptualised as a linear model or an extension of it, and so understanding linear models is a great way to understanding a lot of statistics, without needing to memorise a plethora of *ad hoc* individual statistical procedures.  An added bonus is that linear models can extend to situations where there is no equivalent procedure.  With modern software, so long as you can write down the theorised relationship between your variables as a statistical model, you have a good chance of being able to test it.
+
+*Note - I have mentioned the assumption of 'independence of observations' a few times.  This isn't often mentioned but it is the most important assumption underlying most of our statistical analyses, including non-parametric analysis.  In simple terms it means that observations should not be able to affect each other, and there should not be factors (beyond those included in the model such as treatments) that affect more than one observation.  If this assumption is not correct, then your individual observations may be pseudo-replicates rather than true replicates, and they must be analysed as such or your statistics will be wrong.  Fortunately there are extensions to linear models, for example linear mixed models, than can be used in such situations.*
+
+`r section("Stroke rehabilitation study")`
+
+In this tutorial we will use linear models in R to answer some research questions arising from a clinical study.
+
+The data are from a randomised clinical trial of a new rehabilition intervention (compared to standard post-stroke care) aimed at improving the walking speed of hospital patients.  Better walking speed is a good indicator of general stroke recovery.
+
+We have recorded:
+
+* the age and sex of each participant, 
+* the treatment allocation, 
+* the hospital department from which they were recruited and 
+* time they take to complete a walking task.
+
+Our research questions are:
+
+1. What are the mean and standard deviation of walking speed for treated and untreated participants?
+2. Does the treatment improve walking speed compared to controls?
+3. By how much, and how certain are we of this?
+4. Do age and sex affect walking speed?
+5. Does sex affect the success of the treatment?
+6. Was there any difference in treatment effect by department?
+
+## Loading and exploring the data
+
+First we should inspect the data that we have.  It has been supplied to us as an Excel sheet `walkingspeed.xlsx`.  There are three sheets that include the data that we need for our analysis.  `treated` includes outcomes from treated participants, `control` includes the outcome from control participants, while `meta` includes the demographic meta data from all participants.  
+
+We will need to organise this data into a form in which it can be analysed (ie a 'tidy' format).
+
+`r exercise("Tidy data")`
+
+1. How should the walking speed data look in a 'tidy' layout?
+2. Can you create this in Excel?
+
+`r section("Making the data 'tidy' in R")`
+
+In this simple case we *might* find it easier to create our dataset in the right format before we import it into R.
+
+But for more complex or larger datasets, or if we might have to repeat this operation with a new dataset, it would be better to all of our 'data wrangling' using R code.
+
+We have our data in three separate sheets, and we need to end up with a single data frame that allows us to answer our questions by expressing relationships using the formula syntax.
+
+That is, we will ultimately want to be able to say something like:
+
+`speed ~ treatment + age + sex + department`
+
+so we need to set up our dataset to facilitate this.
+
+## Step 1.  Appending datasets
+
+Base R has the function `rbind()` to combine dataframes row-wise into a new longer dataframe.  But as with many 'data wrangling' problems, the tidyverse function `bind_rows()`is better.  Note - for those who want to use the `data.table` package, the function `rbindlist()` is an excellent alternative.
+
+Tidyverse is made of lots of different packages, we have already seen `readxl` in day 1, today we will use the a function from the `dplyr` package.
+
+`r exercise("Installing a package")`
+
+1. Check whether you have `dplyr` already installed, and install it if you do not.
+2. Start a new script which will include all the command for creating the 'combined' dataset.
+2. Load the `dplyr` library, and look at the help for `bind_rows()`
+
+Following the worked example below:
+
+3. Add the `readxl` commands to read the treatment and control data into two separate data frames.
+4. Now use `bind_rows()` to turn them into a single dataframe.
+
+`r example("Using bind_rows() ")`
+
+Load the control and treatment data into R from the Excel sheet.
+
+```{r }
+library(readxl) 
+treated <- read_excel(path="walkingspeed.xlsx", sheet="treated")
+control <- read_excel(path="walkingspeed.xlsx", sheet="control")
+```
+
+`r exercise("Type trouble")` 
+
+1. What are the classes of each of the vectors in the `treated` and `control` data frames.  
+2. Are they the same?  If not, why not?  
+3. Is this a problem?  How should we fix it?
+
+Now if we use `bind_rows()` on these datasets, we see the following:
+
+```{r }
+library(dplyr) 
+combined <- bind_rows(treated, control)
+head(combined)
+```
+
+We have two different columns for time!  This is because `bind_rows` tries to match the columns by name, and the `time` columns had different names in our dataset.  So we need to fix the names in our data frames to be the same before we bind them:
+
+We can get or set the column names of a data frame with the `names()` function.
+
+So here we will use:
+
+```{r }
+names(control) <- names(treated) # can you explain what this does?
+```
+
+Now what happens if you try to bind the rows?
+
+```{r error=TRUE}
+combined <- bind_rows(treated, control) # can you explain what this does?
+```
+
+If you didn't fix the type of the walking  earlier, `bind_rows()` will fail because in one dataset `time` is a character vector, and in the other it is a numeric vector.
+
+Since we are going to be doing a statistical analysis on this variable, we need it to be a numeric.  Recall that we can convert a character to a numeric with `as.numeric()`
+
+The same function will work for a vector that is part of a dataframe:
+
+```{r }
+treated$time <- as.numeric(treated$time)
+```
+
+Note the warning here, R is telling us that there was a non-numeric character, and that it has been converted to missing.  We should check the original data to see if this is acceptable to us.
+
+*Question - how might you find out using R code which observation is has a time that could not be converted to numeric?*
+
+Now we can bind the rows of the dataset together:
+
+```{r }
+combined <- bind_rows(treated, control) # can you explain what this does?
+head(combined)
+```
+
+This is fine, but now we don't know which data point came from which group.  Fortunately, `bind_rows()` has another argument that adds a column to the new dataset indicating which row it came from.
+
+`r exercise("Adding an group column")`
+
+1. Check the help for `bind_rows()` to find out how to add the grouping column.
+2. Try it!  Call the new column `group` or something like that.
+
+```{r echo=FALSE}
+# can you explain what this does?
+combined <- bind_rows(treat=treated, control=control, .id = "group") 
+```
+
+`r section("Merging datasets")`
+
+So now we have a combined dataset including all of our outcome data and a grouping variable.
+
+To complete our analysis we need the patient meta-data to also be included in this data frame.  Since the data are linked by an ID variable, we will use the `merge()` function to add this information:  FOOTNOTE - as always, there is 
+
+First, we'll read the meta-data into a new data frame.  Then we'll merge the two together using the `merge()` function.  `by.x` and `by.y` tell `merge()` which variables are the ID variables in the first and second datasets respectively.  I hope this is self-explanatory, check the documentation if it is not!
+
+```{r }
+meta <- read_excel(path="walkingspeed.xlsx", sheet="meta")
+merged <- merge(combined, meta, by.x = "patid", by.y = "patient")
+head(merged)
+```
+
+So now we have a single dataframe in tidy format with everything we need to conduct our analysis!
+
+Note that each row contains everything we need to know about each unit of observation, and each column corresponds to a specific variable.
+
+This was a fairly simple example of data wrangling, but is fairly typical of the process I need to go through when I get a new dataset before I can start working on it.  
+
+Be prepared to spend some time figuring out how to do this with your data, and learning the relevent functions from the `dplry`, `tidyr` and other `tidyverse` libraries.   Also, when you are designing your data collection process be aware of how your data ultimately needs to be used, and design your spreadsheets or other data entry systems accordingly.
+
+`r section("Exploratory analysis")`
+
+Now we have our data in R, the first thing we should do is an exploratory analysis.  The aims here are to:
+
+1. Check that the data all looks OK
+2. Think about how our formal analysis might work (eg parametric or non-parametric analysis)
+
+The main tools we have for exploratory analysis are graphs and descriptive statistics.  We should also consider the pattern of missing data to see if this tells us anything important.
+
+For my exploratory plots I'll use base graphics.  Later when we are making our report graphics we'll use `ggplot`. 
+
+For a first plot, seeing all the data points is important:
+
+```{r }
+plot(time~age, data=merged)
+boxplot(time~sex, data=merged)
+```
+
+What do we learn from these plots?
+
+Do the big outlier look reasonable (given what we know about the experiment?)
+
+What are our options for dealing with it?
+
+`r section("Outliers and transformations")`
+
+A transformation is often a good option for dealing with outliers or non-normal distributions.
+
+```{r }
+plot(time~age, log="y",data=merged)
+```
+
+Now we can see an unreasonably high value, and an unreasonably low one!  We also see that the data is likely to be normally distributed (or close enough) on a logarithmic scale.
+
+Let's get rid of the outliers, as we believe they are unreasonable.  It's a judgement call but I think I would only remove the highest and the lowest value here, the others look OK.
+
+To remove the outliers, I will set the value to `NA` if they are higher or lower than a certain threshold.
+
+
+```{r }
+merged$time[merged$time>100] <- NA
+merged$time[merged$time<.1] <- NA
+
+plot(time~age, log="y",data=merged)
+boxplot(time~group, data=merged, log="y")
+```
+
+That looks much better.
+
+
+`r section("Descriptive statistics")`
+
+Our first question concerned descriptive statistics around walking time amongst men and women.  We saw in the last session that R does not have a good built in way to make nice descriptive tables.  In the last session we saw the 'table1' package but now we can use the new `tbl_summary()` function from the gtsummary package to get these.
+
+```{r }
+library(gtsummary)
+walkingdat <- merged
+tbl_summary(merged)
+
+```
+
+This is really nice!.  Something to note: tbl_summary has detected that 'department' has only four values so has treated it as a categorical variable. This is fine but in general R functions will not do this (as we will see later) so be careful.
+
+We want our data stratified by treatment group, so we can use:
+
+```{r warning=TRUE}
+tbl_summary(walkingdat, by=group)
+```
+
+We won't spend a lot of time on this table, but lets change the statistics displayed, and some of the row names, and drop the rows we don't want to include.
+
+For more customisations see the `tbl_summary` vignette.
+
+Take some time to study the `tbl_summary` command below, the `tbl_summary` help files and vignettes to see how these are specified:
+
+```{r }
+tbl1 <- tbl_summary(walkingdat[,c("group","time","age", "sex")], 
+                    by=group,
+                    label=list(time  ~ "Time (s)", age ~ "Age (yrs)", sex~"Sex"),
+                    statistic=list(time~"{mean} ({sd})"))
+add_overall(tbl1)
+```
+
+I have also prepared a short vignette on the use of the `data.table` package to produce descriptive statistics tables.  `data.table` is a very powerful package for manipulating big datasets.  It sort of competes with `dplyr`, and generates a lot of discussion about which system for working with data frames is superior.  There is a good comparison of data wrangling functions in `dplyr`, `data.table` and base R here:
+
+https://wetlandscapes.com/blog/a-comparison-of-r-dialects/
+
+`r section("Regression modelling")`
+
+Now we have our data we can start to address our scientific objectives.  Our first 'inferential' problem was to test whether there was any effect of treatment on walking speed.
+
+`r exercise("T-test")`
+
+1. Use a t-test to establish whether there was an effect of treatment on walking speed.
+
+`r example("lm()")`
+
+Now I will intraoduce the `lm()` function for linear models.  `lm()` is for linear regression, but it is very important to understand this whatever kind of analysis you are planning, because this function provides the template for doing any kind of statistical modelling in R.  T-tests and ANOVA can also be conducted through this `linear modelling` framework.
+
+First lets show that the `lm()` command can produce an identical output to `t.test()`
+
+Make sure you understand the commands below:
+
+```{r }
+model1 <- lm(  time ~ group, data=walkingdat)
+summary(model1)
+```
+
+How do you interept this model output?  Is there an effect of group on walking speed?
+
+```{r }
+t.test( time ~ group,data=walkingdat, var.equal=TRUE)
+```
+
+So if these outcomes are the same you might wonder why we prefer the linear model function?  We should prefer the linear regression because it offers us a lot more flexibility later on.
+
+`r example("Regression diagnostics")`
+
+We should always check that the assumption underlying a linear model are met.  The assumptions are:
+
+* The residuals (differences between observations and 'predicted' values) are identically normally distributed
+* The observations are independent of each other
+
+There is no statistical test for these assumptions, we need to use graphical methods to judge visually whether the first is likely to be reasonable, and our knowledge of the experimental design to know whether the second is true.
+
+When you 'plot' a linear model object the plot() function makes graphs to help you check the distribution of residuals from the model:
+
+```{r }
+plot(model1)
+```
+
+The second graph shows a normal qqplot of residuals from the model.  If the times were normally distributed aroud their predicted values this would follow the straight dotted line.  As it is we can see a significant deviation; there are a lot of residuals that are a lot bigger than the model thinks they should be.  
+
+The first and third graphs are less useful for this regression (because there are only two possible 'predicted' values) but they still illustrate that although the residuals are not normally distributed they do at least seem to be similarly distriuted across groups.
+
+## Transformations and linear models
+
+In the last section we considered a logarithmic transformation for our descriptive plots.  It looked like the data was more 'normally' distributed under this transformation.
+
+We could try to model log(time) as a function of treatment, to see if this meet the assumptions of the regression model better.
+
+We could create a new variable with the transformed values, or we can add the transformation directly to our model.  First we'll look at the log-transformation:
+
+```{r }
+model2 <- lm(  log(time) ~ group ,  data=walkingdat )
+summary(model2)
+plot(model2)
+```
+
+Notice how the transformation was entered into the formula.  Rather than just sending log transformed values to the regression, the formula understands that `log(time)` is a logarithmic transformation of our intended outcome variable.  This is useful later, for example if we want marginal means from our model (via the `emmeans` package) because the means will be inverted back to the original scale.
+
+There is no reason we need to use a log-transform.  Remember we are dealing with a 'time' variable, but what we might equally be interested in is 'speed' which is the reciprocal of this.  So we could run:
+
+```{r }
+model3 <- lm(  1/time ~ group, data=walkingdat)
+summary(model3)
+plot(model3)
+```
+
+
+The final model looks the best.  It seems that if we model the inverse of time (speed) instead of time itself then the distribution of the residuals is very close to normal.
+
+How should we interpret the final model?
+
+## Presenting the results
+
+An advantage of regression models is that we get an estimate and confidence interval for our effect as well as a p-value.  This is a major disadvantge of analysis or reporting just by placing p-values on plots; by restricting ourselves to this we never get to discuss how much of a difference the treatment makes, and our certainty around that estimate of effect.
+
+The plain text summary of the model gives us all of the information we need, but there are other packages to organise regression model output in a more comprehensible and publication-ready form.
+
+For example:
+
+```{r }
+tbl_regression(model1, intercept = TRUE, )
+```
+
+`r section("Multivariable models")`
+
+We can add the effect of age into our model, simply by changing the model formula in the lm() call:
+
+```{r }
+model4 <- lm( 1/time ~ group + age, data=walkingdat)
+tbl_regression(model4)
+```
+
+It looks like the effect of age is 0!  But it is statistically significant, so the low effect size this is probably just a rounding error.  We'll have to change the level of precision being reported in the tabular output (and tweak another couple of options):
+
+```{r }
+tbl_regression(model4,  
+               show_single_row="group",
+               intercept=TRUE,
+               estimate_fun = function(x) style_ratio(x, digits = 4))
+```
+
+We should continue to check that the model assumptions are still met.
+
+`r exercise("Multivariable models")`
+
+1. Add a term to the model to check whether walking speed differs between men and women.
+2. How do you interpret the result?
+```{r }
+plot(model4)
+```
+
+
+`r section("Extractor functions")` 
+
+Lets go back to the model objects that we are creating.  What is the class of `model1`?
+
+```{r }
+class(model1)
+```
+
+So our model results are stored in an object of class `lm` (or *linear model*).  How can we see what information this contains?  We have already seen the `summary()` and `plot()` functions act when an `lm` object is passed to them.  `summary()` gives us a model summary, and `plot()` shows us the regression diagnostics.
+
+We can see directly what kind of information the model object holds using the `names()` function.  Remember when we applied `names()` to a data frame it gave us the column names?  When we apply `names()` to a model it will give us the list of elements it contains:
+
+```{r }
+names(model1)
+```
+
+We could, for example, access the model coefficients using:
+
+```{r }
+model1$coefficients
+```
+
+in exactly the same way we would access a column in a data frame.
+
+But it is usually better to use an 'extractor' function, that is a function that has been designed to get the information in a more friendly and helpful way than to access this information directly.  For example, if we wanted the model coefficients we should really use:
+
+```{r }
+coef(model1)
+```
+
+To see what other functions can be used to extract information from this object (or any object), we can use the `methods()` function as follows:
+
+```{r }
+methods(class="lm")
+```
+
+From here we can see that there is an `anova()` function that would give us the analysis of variance corresponding to this model, and functions to give us predictions and residuals from the model.  We'll look at `anova()` later when we deal with categorical predictors. 
+
+`r exercise("Extracting confidence intervals")`
+
+1. How you get confidence intervals for model coefficients.
+2. Can you get the 95% confidence interval for the effect of treatment on `1/time`.
+3. Can you get the 90% confidence interval instead?
+
+`r section("Testing interactions")`
+
+Our existing model does not allow the effect of treatment on walking speed to vary with sex.  But we might be interested in whether the effect of `group` is the same in men or women (a so called 'interaction' effect).  
+
+*Note it is not valid to do this by comparing models estimated in men and women separately.  We **must** instead estimate a model that includes the interaction between sex and treatment on walking speed.*
+
+Interactions are indicated in R formulas by a `*` or a `:` between the terms.  When we use `:` we add the interaction alone, when we use `*` we add the interaction and the main effects of both variables. So to add the interaction between sex and treatment, as well as the main effects of `group` and `sex` we would use:
+
+```{r }
+model6 <- lm(1/time ~ age + sex*group, data = walkingdat)
+summary(model6)
+```
+
+
+Finally, we can test whether model6 fits the data better than model5.  Anova can be used to compare the fit of two models, and give a p-value for whether the more complex model provides a significantly better fit than the simpler one.
+
+```{r }
+anova(model4, model6)
+```
+
+Is there any evidence that the effect of treatment varies by sex?
+
+
+`r section("Categorical predictors in regression models")`
+
+We might be interested in whether walking speed varies by department.  We could add the department variable to our regression model as follows:
+
+```{r }
+model7 <- lm( 1/time ~ age + sex + group + department, data=walkingdat)
+summary(model7)
+```
+
+But notice that R has not recognised that the 'department' variable should be treated as a categorical variable.  To make sure that 'department' is treated as categorical we should convert it to a 'factor' in our data frame:
+
+```{r }
+walkingdat$department_category <- factor(walkingdat$department)
+```
+
+Note that in the summary of our dataframe, 'department_factor' is now treated appropriately.  Lets see how the regression output changes:
+
+```{r }
+model7 <- lm( 1/time ~ age + sex + group + department_category, data=walkingdat)
+summary(model7)
+```
+
+R has given us an estimate of the effect of each department, compared to department 1, with a p-value corresponding to whether each of departments 2,3, or 4 differ from department 1.  It is probably a better question to ask whether the addition of 'department' led to a better model, that is, ask for an omnibus test of effect of 'department'.
+
+```{r }
+anova(model4, model7)
+```
+
+We could also use `anova()` to get the analysis of variance for the whole model:
+
+```{r }
+anova(model7)
+```
+
+
+
+
+Finally, we might genuinely be interested in comparisons between each pair of levels.  The best way to get this is via the `emmeans` package as follows:
+
+```{r }
+library(emmeans)
+emmeans(model7, pairwise~department_category) 
+
+```
+
+The output from emmeans includes a 'marginal' estimate for the walking speed in each department, plus an estimate and statistical test for each department compared to every other, with a suitable p-value correction for multiple testing.
+
+`r exercise("Interactions")`
+
+1. Can you use `lm()` and `anova()` to test whether the effect of treatment on walking speed varies with department?
+
+
+`r section("Extensions to other types of models")`
+
+Almost every experiment you do can be analysed with this paradigm, that is an outcome variable depending on one or more predictors.  And so data from almost every experiment can be analysed and reported with lm() or a related function.
+
+In practice the modelling functions I find useful for most analyses are:
+
+* `lm()` - regression models and ANOVA
+* `glm()` - generalised linear models (count data and binary outcomes in including Poisson and logistic regression)
+* `lmer()` and `glmer()` - from the lme4 package for mixed effects models (when the assumption of independence is not met, analogous to repeated measures ANOVA)
+* `nlme()` for non-linear models
+* And many others..
+
+## Further reading on analysis with R
+
+More detailed linear modelling tutorial.  http://tutorials.iq.harvard.edu/R/Rstatistics/Rstatistics.html
+
+Understanding the linear regression diagnostic plots:  http://www.sthda.com/english/articles/39-regression-model-diagnostics/161-linear-regression-assumptions-and-diagnostics-in-r-essentials/
+
+Using emmeans to get contrasts and margins https://aosmith.rbind.io/2019/03/25/getting-started-with-emmeans/
+
+
+
+
+
+<!-- `r section("Subsetting")` -->
+
+
+
+<!-- `r example("Transforming and combining variables")` -->
+
+<!-- Just as we can apply mathematical functions to objects representing single numbers and vectors, we can apply them to columns in our data frame to transform or combine variables into new variables. -->
+
+<!-- For example, suppose we want to log transform the height variable, and create a new variable called logHeight.  Then we would use: -->
+
+<!-- ```{r } -->
+<!-- TreeData <- read_excel(path="day1/introstat.xlsx", sheet="P1-TreeSpeciesData", .name_repair = "universal") -->
+
+<!-- TreeData$logHeight <- log(TreeData$height) -->
+<!-- ``` -->
+
+<!-- As when dealing with vectors above, R will apply the function individually to each element of the column, creatig a new variable in our data. -->
+
+<!-- Check that this variable has been created. -->
+
+<!-- Now we can plot the new variable against dgl: -->
+<!-- ```{r } -->
+<!-- plot( logHeight ~ dgl, data = TreeData) -->
+<!-- ``` -->
+
+
+<!-- `r section("Linear regression")` -->
+
+<!-- In the previous section we saw that dgl could be used to predict tree height.  We can estimate a linear model for this relationship using the lm() function -->
+
+<!-- ```{r } -->
+<!-- lm1 <-  lm( height ~ dgl, data=TreeData  ) -->
+<!-- ``` -->
+
+<!-- Note this function uses the same 'formula' interface as the t-test, boxplot functions above. -->
+
+<!-- `lm()` creates a ‘linear model’ object.  The linear model object contains the all the details of an estimated linear regression model with ‘height’ as the outcome and ‘dgl’ as the predictor. -->
+
+<!-- There are now lots of different functions you can use to extract elements of this model. -->
+<!-- To see a description of all the information contained within the object, use: -->
+
+<!-- ```{r } -->
+<!-- attributes(lm1) -->
+<!-- ``` -->
+
+<!-- But generally you won’t need to use these attributes directly.  Different functions exist to extract the information in readable and usable formats: -->
+
+<!-- The summary command that we used earlier can also ‘summarise’ a linear model.  It produces the standard linear regression output that you would expect from any statistics package. -->
+
+<!-- ```{r } -->
+<!-- summary(lm1) -->
+<!-- ``` -->
+
+<!-- To get the corresponding analysis of variance table, use the anova() function: -->
+
+<!-- ```{r } -->
+<!-- anova(lm1) # Note by default R returns ‘type III’ ANOVA. -->
+<!-- ``` -->
+
+<!-- To plot the data with the regression model added, use the ‘plot’ function as previously, then abline() to add the line: -->
+
+<!-- ```{r } -->
+<!-- plot( height ~ dgl, data = TreeData) -->
+<!-- abline(lm1, col="red") -->
+<!-- ``` -->
+
+
+<!-- `r example("Regression predictions and diagnostics")` -->
+
+<!-- After estimating a regression model we should inspect it to check its underlying assumptions are met.   R will show you some useful diagnostic plots if you run: -->
+
+<!-- ```{r } -->
+<!-- plot(lm1) -->
+<!-- ``` -->
+
+<!-- If we want to directly check the predicted values or residuals from the model we can use the predict and resid functions -->
+
+<!-- ```{ r} -->
+<!-- predict(lm1) -->
+<!-- resid(lm1) -->
+<!-- ``` -->
+
+<!-- These functions generate vectors with each element corresponding to a row in the original data frame.  So element [1] of the vector created by predict() is the predicted (fitted) value of height for the first row in TreeData under our model. -->
+
+<!-- `r example("Using factors to represent categorical variables")` -->
+
+<!-- So far we have not considered how R represents categorial variables.  R has a special type called a 'factor' whereby categories are represented by integers corresponding to groups, with each integer given a text label.  We'll illustrate their use with a simple example: -->
+
+<!-- ## A model with a categorical predictor -->
+
+<!-- Suppose we wanted to model the relationship between tree height and species.  'Species' is a categorical variable, rather than a continuous numeric as dgl was, but the way in which we estimate the model in R is the same. That is, we do this by running: -->
+
+<!-- ```{r } -->
+<!-- lm2 <-  lm( height ~ species.name, data=TreeData  ) -->
+<!-- summary(lm2) -->
+<!-- ``` -->
+
+<!-- Notice that we did not need to create any 'dummy' variables to indicate the different levels, R did this automatically, and chose the level with the lowest value (alphabetically) to be the reference value.  -->
+
+<!-- Because the species.name variable was a ‘character’ variable, R understood that we wanted it to be analysed in categories (just as it did when we estimated the box plots). -->
+
+<!-- Much of the time, if we try to use a character variable in an analysis, R will interpret this as a factor. -->
+
+<!-- If we had used the numeric species number variable, then R would not have automatically realised this, and we would get a non-sensical regression. -->
+
+<!-- ```{r } -->
+<!-- lm3 <-  lm( height ~ species, data=TreeData  ) -->
+<!-- summary(lm3) -->
+<!-- ``` -->
+
+<!-- To make R treat a numeric variable as categorical it needs to be turned into a ‘factor’ variable.  A factor is a numeric variable where the numbers just represent groups, they lose their meaning as numbers. -->
+
+<!-- Rather than overwriting the species numeric variable, we’ll create a new one for the factor: -->
+
+<!-- First we’ll check the class of TreeData$species and ask for a summary: -->
+
+<!-- ```{r } -->
+<!-- class(TreeData$species) -->
+<!-- summary(TreeData$species) -->
+<!-- ``` -->
+
+<!-- We see a summary that is suitable for a continuous numeric (mean, median etc) -->
+
+<!-- Now make a new factor variable and add it to the dataframe: -->
+
+<!-- ```{r } -->
+<!-- TreeData$speciesF <- factor(TreeData$species) -->
+<!-- ``` -->
+
+<!-- Now check the class and the summary again.  R realises that a factor should be summarised by a tabulation not mean, median etc. -->
+
+<!-- ```{r } -->
+<!-- class(TreeData$speciesF) -->
+<!-- summary(TreeData$speciesF) -->
+<!-- ``` -->
+
+<!-- Finally the regression model should look sensible again, that is with one row per category (compared to a reference group). -->
+
+<!-- ```{r } -->
+<!-- lm4 <- lm( height ~ speciesF, data=TreeData  ) -->
+<!-- summary(lm4) -->
+<!-- ``` -->
+
+<!-- Exercise -->
+<!-- a)	Are the regression coefficients the same as those estimated for model 2?  If not, why not? -->
+<!-- b)	The function `tbl_regression()` in the `gtsummary` package provides nicely laid out summaries of regression models.  Give it a try. -->
+
+
+
+<!-- ```{r setup, include=FALSE} -->
+<!-- knitr::opts_chunk$set(echo = TRUE) -->
+<!-- ``` -->
+
